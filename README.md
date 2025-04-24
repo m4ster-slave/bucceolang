@@ -32,20 +32,20 @@ Zur weiteren Orientierung und Projektplanung sind folgende Dokumente verfügbar:
 
 ### 📄 Dokumentation
 
-- [📜 Pflichtenheft](./assets/007%20%20%20pflichtenheft.md)
-- [🧱 Abstrakte Struktur](./assets/003%20%20%20abstract.md)
-- [📊 Diagrammübersicht](./assets/004%20%20%20diagramms.md)
-- [📅 Besprechungsprotokoll](./assets/002%20%20%20protokoll.md)
+- [📜 Pflichtenheft](./assets/pflichtenheft.md)
+- [🧱 Abstrakte Struktur](./assets/abstract.md)
+- [📊 Diagrammübersicht](./assets/diagramms.md)
+- [📅 Besprechungsprotokoll](./assets/protokoll.md)
 
 ### 🧩 Diagramme
 
-- [📌 Klassendiagramm](./assets/Klassendiagramm.png)
-- [🎯 Use-Case-Diagramm](./assets/008%20%20%20Use_Case_Diagramm.png)
+- ![📌 Klassendiagramm](./assets/Klassendiagramm.png)
+- ![🎯 Use-Case-Diagramm](./assets/Use_Case_Diagramm.png)
 
 ### 🖼️ Logos & Grafiken
 
-- [🖼️ Logo PNG](./assets/001%20%20%20logo.png)
-- [🖼️ Logo JPEG](./assets/006%20%20%20logo.jpeg)
+- ![🖼️ Logo PNG](./assets/logo.png)
+- ![🖼️ Logo JPEG](./assets/logo.jpeg)
 
 ---
 
