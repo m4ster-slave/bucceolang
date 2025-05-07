@@ -1,17 +1,15 @@
-use std::env;
-use std::fmt::Pointer;
-use std::fs;
-use std::io::{self, Write};
-use crate::scanner::*;
 use crate::parser::*;
+use crate::scanner::*;
+use std::env;
+use std::fs;
 
-mod scanner;
 mod parser;
+mod scanner;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
-        writeln!(io::stderr(), "Usage: {} tokenize/parse <filename>", args[0]).unwrap();
+        eprintln!("Usage: {} tokenize/parse <filename>", args[0]);
         return;
     }
 
@@ -21,26 +19,27 @@ fn main() {
     match command.as_str() {
         "tokenize" => {
             let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
+                eprintln!("Failed to read file {}", filename);
                 String::new()
             });
 
-            let exit_code = tokenize(&file_contents);
-            std::process::exit(exit_code);
-        },
+            // TODO: create a Result to see if tokenazation failed somehow ?
+            println!("Tokenizer output: {:?}", tokenize(&file_contents));
+        }
         "parse" => {
             let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
+                eprintln!("Failed to read file {}", filename);
                 String::new()
             });
-
-            let exit_code = parse(&file_contents);
-            std::process::exit(exit_code);
-        },
+        }
         _ => {
-            writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
-            return;
+            eprintln!("Unknown command: {}", command);
         }
     }
 }
 
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_tokenizer() {}
+}

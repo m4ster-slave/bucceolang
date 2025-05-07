@@ -1,8 +1,11 @@
-var result = (a + b) > 7 && "Success" != "Failure" or x >= 5
+var a = 10
+var b = 15
+var x = 999999.0
+var result = (a + b) > 7 && "Success" != "Failure" || x >= 5
 while (result) {
   var counter = 0
   counter = counter + 1
   if (counter == 10) {
-    return nil
+    return nil //this is a comment and should be ignored
   }
 }
