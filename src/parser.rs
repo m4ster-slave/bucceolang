@@ -22,42 +22,77 @@ use crate::*;
 //               | primary ;
 //primary        → NUMBER | STRING | "true" | "false" | "nil"
 //               | "(" expression ")" ;
+//
 
+#[derive(Debug, Clone)]
 pub enum Expr {
-    Literal(Box<LiteralExpr>),
-    Grouping(Box<GroupingExpr>),
-    Unary(Box<UnaryExpr>),
-    Binary(Box<BinaryExpr>),
-    Operator(Box<OperatorExpr>),
+    Literal(LiteralExpr),
+    Grouping(GroupingExpr),
+    Unary(UnaryExpr),
+    Binary(BinaryExpr),
 }
 
-pub(crate) struct LiteralExpr {
-    literal: Token,
+// visitor pattern to evaluate expressions
+pub trait ExprVisitor<T> {
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> T;
+    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> T;
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> T;
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> T;
 }
 
-pub(crate) struct GroupingExpr {
-    paren_open: Token,
-    expr: Box<Expr>,
-    paren_close: Token,
+impl Expr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> T {
+        match self {
+            Expr::Literal(expr) => visitor.visit_literal_expr(expr),
+            Expr::Grouping(expr) => visitor.visit_grouping_expr(expr),
+            Expr::Unary(expr) => visitor.visit_unary_expr(expr),
+            Expr::Binary(expr) => visitor.visit_binary_expr(expr),
+        }
+    }
 }
 
-pub(crate) struct UnaryExpr {
-    prefix: Token,
-    operator: Box<Expr>,
+#[derive(Debug, Clone)]
+pub struct LiteralExpr {
+    pub literal: Token,
 }
 
-pub(crate) struct BinaryExpr {
-    left: Box<Expr>,
-    operator: Token,
-    right: Box<Expr>,
+#[derive(Debug, Clone)]
+pub struct GroupingExpr {
+    pub paren_open: Token,
+    pub expr: Box<Expr>,
+    pub paren_close: Token,
 }
 
-// technically we dont need this because only the binary expr uses this and it has a token but well
-// keep it here for completeness sake
-pub(crate) struct OperatorExpr {
-    operator: Token,
+#[derive(Debug, Clone)]
+pub struct UnaryExpr {
+    pub prefix: Token,
+    pub operator: Box<Expr>,
 }
 
-pub fn parse(input: &str) -> i32 {
-    return 10;
+#[derive(Debug, Clone)]
+pub struct BinaryExpr {
+    pub left: Box<Expr>,
+    pub operator: Token,
+    pub right: Box<Expr>,
+}
+
+// Parser implementation
+pub struct Parser {
+    tokens: Vec<Token>,
+    current: usize,
+}
+
+impl Parser {
+    pub fn new(tokens: Vec<Token>) -> Self {
+        Parser { tokens, current: 0 }
+    }
+
+    pub fn parse(&mut self) -> Result<Box<Expr>, String> {
+        todo!();
+    }
+}
+
+pub fn parse(token_input: Vec<Token>) -> Result<Box<Expr>, String> {
+    let mut parser = Parser::new(token_input);
+    parser.parse()
 }
