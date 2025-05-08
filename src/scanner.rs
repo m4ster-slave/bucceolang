@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     LeftParen,
     RightParen,
@@ -331,6 +331,22 @@ fn is_keyword(var: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_is_keyword() {
+        assert!(is_keyword("while"));
+        assert!(!is_keyword("num0"));
+    }
+
+    #[test]
+    fn test_is_valid_variabl_char() {
+        assert!(is_valid_variable_char('a', true));
+        assert!(is_valid_variable_char('A', false));
+        assert!(!is_valid_variable_char('0', true));
+        assert!(is_valid_variable_char('1', false));
+        assert!(!is_valid_variable_char('&', false));
+        assert!(is_valid_variable_char('_', false));
+    }
 
     #[test]
     fn test_simple_tokens() {
