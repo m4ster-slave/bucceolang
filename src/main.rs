@@ -1,37 +1,47 @@
 mod interpreter;
+mod object;
 mod parser;
 mod parser_error;
 mod runtime_error;
 mod scanner;
+mod scanner_error;
+mod token;
 
 use interpreter::Interpreter;
 use parser::parse;
-use scanner::{tokenize, Token};
+use scanner::tokenize;
+use std::process::ExitCode;
+use token::Token;
 
-fn main() {
+fn main() -> ExitCode {
     let source = "1 + (1 * 10)";
-    run(source);
-}
-
-fn run(source: &str) {
     println!("\nRunning: {}", source);
 
-    // Tokenize
-    let tokens = tokenize(source);
+    let tokens = match tokenize(source) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Scanner Error: {}", e);
+            return ExitCode::from(65);
+        }
+    };
     println!("Tokens: {:?}", tokens);
 
-    // Parse
-    match parse(tokens) {
-        Ok(expr) => {
-            // Interpret
-            let interpreter = Interpreter;
-            match expr.accept(&interpreter) {
-                Ok(result) => println!("Result: {}", result),
-                Err(error) => eprintln!("Runtime Error: {}", error),
-            }
+    let expr = match parse(tokens) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("Parsing Error: {}", e);
+            return ExitCode::from(65);
         }
-        Err(error) => {
-            println!("Parsing Error: {}", error);
+    };
+
+    match expr.accept(&Interpreter) {
+        Ok(res) => {
+            println!("Result: {}", res);
+            ExitCode::SUCCESS
+        }
+        Err(err) => {
+            eprintln!("Runtime Error: {}", err);
+            ExitCode::from(70)
         }
     }
 }

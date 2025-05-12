@@ -1,4 +1,4 @@
-use crate::Token;
+use crate::{token::TokenType, Token};
 
 #[derive(Debug, Clone)]
 pub struct ParseError {
@@ -8,12 +8,9 @@ pub struct ParseError {
 }
 
 pub fn error(token: &Token, message: String) -> ParseError {
-    let (line, where_msg) = match token {
-        Token::EOF => (0, "at end".to_string()),
-        _ => (
-            get_token_line(token),
-            format!("at '{}'", token_to_string(token)),
-        ),
+    let (line, where_msg) = match token.token_type() {
+        TokenType::EOF => (0, "at end".to_string()),
+        _ => (token.line(), format!("at '{}'", token_to_string(token))),
     };
 
     let error = ParseError {
@@ -22,25 +19,39 @@ pub fn error(token: &Token, message: String) -> ParseError {
         message,
     };
 
-    report(error.line, &error.location, &error.message);
+    eprintln!(
+        "[line {}] Error {}: {}",
+        error.line, error.location, error.message
+    );
 
     error
 }
 
-// TODO
-fn get_token_line(token: &Token) -> u64 {
-    0
-}
-
 fn token_to_string(token: &Token) -> String {
-    match token {
-        Token::String(s) => format!("\"{}\"", s),
-        Token::Number(n) => n.clone(),
-        Token::Var(name) => name.clone(),
-        _ => format!("{:?}", token),
+    match token.token_type() {
+        TokenType::String => {
+            if let Some(obj) = token.literal() {
+                format!("\"{}\"", obj.to_string())
+            } else {
+                "\"\"".to_string()
+            }
+        }
+        TokenType::Number => {
+            if let Some(obj) = token.literal() {
+                obj.to_string()
+            } else {
+                "0".to_string()
+            }
+        }
+        TokenType::Var => {
+            if let Some(obj) = token.literal() {
+                obj.to_string()
+            } else {
+                "unnamed_var".to_string()
+            }
+        }
+        _ => {
+            format!("{:?}", token)
+        }
     }
-}
-
-pub fn report(line: u64, where_msg: &str, message: &str) {
-    eprintln!("[line {}] Error {}: {}", line, where_msg, message)
 }
