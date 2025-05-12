@@ -1,6 +1,6 @@
 use crate::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseError {
     pub line: u64,
     pub location: String,
