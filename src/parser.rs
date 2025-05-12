@@ -1,3 +1,4 @@
+use crate::parser_error::{self, ParseError};
 use crate::Token;
 
 //expression     → literal
@@ -80,28 +81,49 @@ pub struct BinaryExpr {
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    had_error: bool,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Parser { tokens, current: 0 }
+        Parser {
+            tokens,
+            current: 0,
+            had_error: false,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Box<Expr>, String> {
-        let expr = self.expression()?;
-        Ok(Box::new(expr))
+        match self.expression() {
+            Ok(expr) => {
+                if self.had_error {
+                    Err("Parsing completed with errors.".to_string())
+                } else {
+                    Ok(Box::new(expr))
+                }
+            }
+            Err(e) => Err(format!("Parse error: {}", e.message)),
+        }
     }
 
-    fn expression(&mut self) -> Result<Expr, String> {
+    fn expression(&mut self) -> Result<Expr, ParseError> {
         self.equality()
     }
 
-    fn equality(&mut self) -> Result<Expr, String> {
+    fn equality(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.comparison()?;
 
         while self.match_tokens(&[Token::BangEqual, Token::EqualEqual]) {
             let operator = self.previous().clone();
-            let right = self.comparison()?;
+            let right = match self.comparison() {
+                Ok(right_expr) => right_expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
+
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
                 operator,
@@ -112,7 +134,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, String> {
+    fn comparison(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.term()?;
 
         while self.match_tokens(&[
@@ -122,7 +144,15 @@ impl Parser {
             Token::LessEqual,
         ]) {
             let operator = self.previous().clone();
-            let right = self.term()?;
+            let right = match self.term() {
+                Ok(right_expr) => right_expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
+
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
                 operator,
@@ -133,12 +163,20 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, String> {
+    fn term(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.factor()?;
 
         while self.match_tokens(&[Token::Minus, Token::Plus]) {
             let operator = self.previous().clone();
-            let right = self.factor()?;
+            let right = match self.factor() {
+                Ok(right_expr) => right_expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
+
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
                 operator,
@@ -149,12 +187,20 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, String> {
+    fn factor(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.unary()?;
 
         while self.match_tokens(&[Token::Slash, Token::Asterisk]) {
             let operator = self.previous().clone();
-            let right = self.unary()?;
+            let right = match self.unary() {
+                Ok(right_expr) => right_expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
+
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
                 operator,
@@ -165,10 +211,18 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, String> {
+    fn unary(&mut self) -> Result<Expr, ParseError> {
         if self.match_tokens(&[Token::Bang, Token::Minus]) {
             let prefix = self.previous().clone();
-            let operator = self.unary()?;
+            let operator = match self.unary() {
+                Ok(unary_expr) => unary_expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
+
             return Ok(Expr::Unary(UnaryExpr {
                 prefix,
                 operator: Box::new(operator),
@@ -178,7 +232,7 @@ impl Parser {
         self.primary()
     }
 
-    fn primary(&mut self) -> Result<Expr, String> {
+    fn primary(&mut self) -> Result<Expr, ParseError> {
         if self.match_token(Token::False)
             || self.match_token(Token::True)
             || self.match_token(Token::Nil)
@@ -206,10 +260,21 @@ impl Parser {
 
         if self.match_token(Token::LeftParen) {
             let paren_open = self.previous().clone();
-            let expr = self.expression()?;
+            let expr = match self.expression() {
+                Ok(expr) => expr,
+                Err(error) => {
+                    self.had_error = true;
+                    self.synchronize();
+                    return Err(error);
+                }
+            };
 
             if !self.check(&Token::RightParen) {
-                return Err("Expected ')' after expression".to_string());
+                let error =
+                    parser_error::error(self.peek(), "Expected ')' after expression".to_string());
+                self.had_error = true;
+                self.synchronize();
+                return Err(error);
             }
 
             self.advance();
@@ -222,7 +287,11 @@ impl Parser {
             }));
         }
 
-        Err(format!("Expected expression but found {:?}", self.peek()))
+        // If we reach here, we didn't find a valid expression
+        let error = parser_error::error(self.peek(), "Expected expression".to_string());
+        self.had_error = true;
+        self.synchronize();
+        Err(error)
     }
 
     fn match_tokens(&mut self, types: &[Token]) -> bool {
@@ -283,6 +352,30 @@ impl Parser {
 
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
+    }
+
+    // Enhanced synchronize method with better error recovery
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if *self.previous() == Token::Semicolon {
+                return;
+            }
+
+            match self.peek() {
+                Token::Class
+                | Token::Fn
+                | Token::Var(_)
+                | Token::If
+                | Token::While
+                | Token::Print
+                | Token::Return => return,
+                _ => {
+                    self.advance();
+                }
+            };
+        }
     }
 }
 

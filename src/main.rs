@@ -1,7 +1,8 @@
 mod parser;
+mod parser_error;
 mod scanner;
 
-use parser::{parse, Expr, ExprVisitor};
+use parser::{parse, ExprVisitor};
 use scanner::scanner::{tokenize, Token};
 
 // A simple implementation of the visitor pattern to print expressions
@@ -57,8 +58,18 @@ impl ExprVisitor<String> for AstPrinter {
 
 fn main() {
     // Example usage
-    let source = "1 + 2 * (3 - 4)";
-    println!("Source: {}", source);
+    let source = "1 + (1 * 10)";
+    run(source);
+
+    // Test with an error case
+    let source_with_error = r#"1 + (1 * )
+    2 - 3 /
+    "#;
+    run(source_with_error);
+}
+
+fn run(source: &str) {
+    println!("\nRunning: {}", source);
 
     // Tokenize
     let tokens = tokenize(source);
