@@ -1,24 +1,7 @@
+use crate::object::Object;
 use crate::parser::ExprVisitor;
 use crate::runtime_error::RuntimeError;
-use crate::Token;
-
-pub enum Object {
-    Nil,
-    Boolean(bool),
-    Number(f64),
-    String(String),
-}
-
-impl std::fmt::Display for Object {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Object::Nil => write!(f, "Nil"),
-            Object::Boolean(bool) => write!(f, "{}", bool),
-            Object::Number(num) => write!(f, "{}", num),
-            Object::String(string) => write!(f, "{}", string),
-        }
-    }
-}
+use crate::token::TokenType;
 
 #[derive(Debug)]
 pub struct Interpreter;
@@ -29,15 +12,26 @@ impl ExprVisitor<Object> for Interpreter {
         &self,
         expr: &crate::parser::LiteralExpr,
     ) -> Result<Object, RuntimeError> {
-        match &expr.literal {
-            Token::String(s) => Ok(Object::String(s.to_string())),
-            Token::Number(n) => Ok(Object::Number(
-                n.parse::<f64>()
-                    .expect("Should have been able to parse the value"),
-            )),
-            Token::True => Ok(Object::Boolean(true)),
-            Token::False => Ok(Object::Boolean(false)),
-            Token::Nil => Ok(Object::Nil),
+        match &expr.literal.token_type() {
+            TokenType::String
+            | TokenType::Number
+            | TokenType::True
+            | TokenType::False
+            | TokenType::Nil => match &expr.literal.literal() {
+                Some(obj) => Ok(obj.clone()),
+                None => match expr.literal.token_type() {
+                    TokenType::String => Ok(Object::String("".to_string())),
+                    TokenType::Number => Err(RuntimeError::TypeError(
+                        "Expected a number literal, but found none.".to_string(),
+                    )),
+                    TokenType::True => Ok(Object::Boolean(true)),
+                    TokenType::False => Ok(Object::Boolean(false)),
+                    TokenType::Nil => Ok(Object::Nil),
+                    _ => Err(RuntimeError::TypeError(
+                        "Unhandled literal type".to_string(),
+                    )),
+                },
+            },
             _ => Err(RuntimeError::TypeError(
                 "Not a valid literal to be parsed".to_string(),
             )),
@@ -55,9 +49,9 @@ impl ExprVisitor<Object> for Interpreter {
     fn visit_unary_expr(&self, expr: &crate::parser::UnaryExpr) -> Result<Object, RuntimeError> {
         let right = expr.operator.accept(self)?;
 
-        match expr.prefix {
-            Token::Bang => Ok(Object::Boolean(!is_truthy(&right))),
-            Token::Minus => {
+        match expr.prefix.token_type() {
+            TokenType::Bang => Ok(Object::Boolean(!is_truthy(&right))),
+            TokenType::Minus => {
                 if let Object::Number(value) = right {
                     Ok(Object::Number(-value))
                 } else {
@@ -74,8 +68,8 @@ impl ExprVisitor<Object> for Interpreter {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
 
-        match expr.operator {
-            Token::Minus => {
+        match expr.operator.token_type() {
+            TokenType::Minus => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Number(left_val - right_val))
                 } else {
@@ -84,7 +78,7 @@ impl ExprVisitor<Object> for Interpreter {
                     ))
                 }
             }
-            Token::Plus => match (&left, &right) {
+            TokenType::Plus => match (&left, &right) {
                 (Object::Number(left_val), Object::Number(right_val)) => {
                     Ok(Object::Number(left_val + right_val))
                 }
@@ -95,7 +89,7 @@ impl ExprVisitor<Object> for Interpreter {
                     "Operands must be two numbers or two strings".to_string(),
                 )),
             },
-            Token::Slash => {
+            TokenType::Slash => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     if *right_val == 0.0 {
                         return Err(RuntimeError::DivisionByZero);
@@ -107,7 +101,7 @@ impl ExprVisitor<Object> for Interpreter {
                     ))
                 }
             }
-            Token::Asterisk => {
+            TokenType::Asterisk => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Number(left_val * right_val))
                 } else {
@@ -118,7 +112,7 @@ impl ExprVisitor<Object> for Interpreter {
             }
 
             // Comparison operators
-            Token::Greater => {
+            TokenType::Greater => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val > right_val))
                 } else {
@@ -127,7 +121,7 @@ impl ExprVisitor<Object> for Interpreter {
                     ))
                 }
             }
-            Token::GreaterEqual => {
+            TokenType::GreaterEqual => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val >= right_val))
                 } else {
@@ -136,7 +130,7 @@ impl ExprVisitor<Object> for Interpreter {
                     ))
                 }
             }
-            Token::Less => {
+            TokenType::Less => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val < right_val))
                 } else {
@@ -145,7 +139,7 @@ impl ExprVisitor<Object> for Interpreter {
                     ))
                 }
             }
-            Token::LessEqual => {
+            TokenType::LessEqual => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val <= right_val))
                 } else {
@@ -155,8 +149,8 @@ impl ExprVisitor<Object> for Interpreter {
                 }
             }
 
-            Token::EqualEqual => Ok(Object::Boolean(is_equal(&left, &right))),
-            Token::BangEqual => Ok(Object::Boolean(!is_equal(&left, &right))),
+            TokenType::EqualEqual => Ok(Object::Boolean(is_equal(&left, &right))),
+            TokenType::BangEqual => Ok(Object::Boolean(!is_equal(&left, &right))),
 
             _ => panic!("Unknown operator"),
         }
