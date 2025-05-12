@@ -1,4 +1,5 @@
 use crate::parser_error::{self, ParseError};
+use crate::runtime_error::RuntimeError;
 use crate::Token;
 
 //expression     → literal
@@ -35,14 +36,14 @@ pub enum Expr {
 
 // visitor pattern to evaluate expressions
 pub trait ExprVisitor<T> {
-    fn visit_literal_expr(&self, expr: &LiteralExpr) -> T;
-    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> T;
-    fn visit_unary_expr(&self, expr: &UnaryExpr) -> T;
-    fn visit_binary_expr(&self, expr: &BinaryExpr) -> T;
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, RuntimeError>;
+    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<T, RuntimeError>;
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<T, RuntimeError>;
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
-    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> T {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, RuntimeError> {
         match self {
             Expr::Literal(expr) => visitor.visit_literal_expr(expr),
             Expr::Grouping(expr) => visitor.visit_grouping_expr(expr),
@@ -77,7 +78,6 @@ pub struct BinaryExpr {
     pub right: Box<Expr>,
 }
 
-// Parser implementation
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
@@ -287,7 +287,6 @@ impl Parser {
             }));
         }
 
-        // If we reach here, we didn't find a valid expression
         let error = parser_error::error(self.peek(), "Expected expression".to_string());
         self.had_error = true;
         self.synchronize();
