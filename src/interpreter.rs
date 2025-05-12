@@ -1,5 +1,5 @@
+use crate::ast_types::*;
 use crate::object::Object;
-use crate::parser::ExprVisitor;
 use crate::runtime_error::RuntimeError;
 use crate::token::TokenType;
 
@@ -10,7 +10,7 @@ impl ExprVisitor<Object> for Interpreter {
     // simply pull runtime expression back out of the token
     fn visit_literal_expr(
         &self,
-        expr: &crate::parser::LiteralExpr,
+        expr: &crate::ast_types::LiteralExpr,
     ) -> Result<Object, RuntimeError> {
         match &expr.literal.token_type() {
             TokenType::String
@@ -41,12 +41,12 @@ impl ExprVisitor<Object> for Interpreter {
     // evaluate the subexpression in the grouping
     fn visit_grouping_expr(
         &self,
-        expr: &crate::parser::GroupingExpr,
+        expr: &crate::ast_types::GroupingExpr,
     ) -> Result<Object, RuntimeError> {
         expr.expr.accept(self)
     }
 
-    fn visit_unary_expr(&self, expr: &crate::parser::UnaryExpr) -> Result<Object, RuntimeError> {
+    fn visit_unary_expr(&self, expr: &crate::ast_types::UnaryExpr) -> Result<Object, RuntimeError> {
         let right = expr.operator.accept(self)?;
 
         match expr.prefix.token_type() {
@@ -64,7 +64,10 @@ impl ExprVisitor<Object> for Interpreter {
         }
     }
 
-    fn visit_binary_expr(&self, expr: &crate::parser::BinaryExpr) -> Result<Object, RuntimeError> {
+    fn visit_binary_expr(
+        &self,
+        expr: &crate::ast_types::BinaryExpr,
+    ) -> Result<Object, RuntimeError> {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
 

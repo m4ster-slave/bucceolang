@@ -1,3 +1,4 @@
+mod ast_types;
 mod interpreter;
 mod object;
 mod parser;
