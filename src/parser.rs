@@ -1,5 +1,6 @@
-use crate::ast_types::*;
-use crate::parser_error::{self, ParseError};
+use crate::expr_types::*;
+use crate::parser_error::{self, error, ParseError};
+use crate::stmt_types::Stmt;
 use crate::token::TokenType;
 use crate::Token;
 
@@ -418,6 +419,8 @@ impl Parser {
 
 /// Parses a list of tokens into an abstract syntax tree (AST).
 ///
+/// This parses a series of statements, as many as it can find until it hits the end of the input
+///
 /// This is a convenience function that creates a `Parser` instance and
 /// calls its `parse` method.
 ///
@@ -427,12 +430,64 @@ impl Parser {
 ///
 /// # Returns
 ///
-/// A `Result` containing a `Box<Expr>` representing the root of the AST on
+/// A `Result` containing a `Vec<Stmt>` representing the roots of the AST on
 /// successful parsing without errors, or a `String` containing an error message
 /// if parsing failed or completed with errors.
-pub fn parse(token_input: Vec<Token>) -> Result<Box<Expr>, String> {
+pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
+    let mut stmts: Vec<Stmt> = Vec::new();
     let mut parser = Parser::new(token_input);
-    parser.parse()
+    let mut parser_errors: Vec<ParseError> = Vec::new();
+
+    while !parser.is_at_end() {
+        match statement(&mut parser) {
+            Ok(statement) => stmts.push(statement),
+            Err(error) => {
+                parser.had_error = true;
+                parser_errors.push(error);
+            }
+        }
+    }
+
+    Ok(stmts)
+}
+
+/// This function checks which kind of Statement a token is and returns it or throws a parsing
+/// error
+fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    match parser.peek().token_type() {
+        TokenType::Print => print_statement(parser),
+        _ => expression_statement(parser),
+    }
+}
+
+/// Returns a 'Stmt::Print' statement after evaluating the expression signaling to the
+/// StmtVisitor to print the result
+fn print_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    // advance to skip print
+    parser.advance();
+
+    let val: Expr = parser.expression()?;
+    if !parser.match_token(TokenType::Semicolon) {
+        return Err(error(
+            parser.peek(),
+            "Expect ';' after expression.".to_string(),
+        ));
+    }
+
+    Ok(Stmt::Print(val))
+}
+
+/// Evaluates the expression and returns it as a 'Stmt::Expression'
+fn expression_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    let val: Expr = parser.expression()?;
+    if !parser.match_token(TokenType::Semicolon) {
+        return Err(error(
+            parser.peek(),
+            "Expect ';' after expression.".to_string(),
+        ));
+    }
+
+    Ok(Stmt::Expression(val))
 }
 
 #[cfg(test)]

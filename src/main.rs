@@ -1,4 +1,4 @@
-mod ast_types;
+mod expr_types;
 mod interpreter;
 mod object;
 mod parser;
@@ -6,6 +6,7 @@ mod parser_error;
 mod runtime_error;
 mod scanner;
 mod scanner_error;
+mod stmt_types;
 mod token;
 
 use interpreter::Interpreter;
@@ -65,23 +66,6 @@ To use this interpreter, you would typically:
 8.  Call the interpreter's method to execute the AST.
 9.  Handle any runtime errors.
 
-## Example Usage (Illustrative)
-
-```no_run
-use my_interpreter::run_code; // Assuming a top-level run function
-
-fn main() {
-    let source = "var a = 1 + 2; print a;";
-    match run_code(source) {
-        Ok(_) => println!("Execution successful!"),
-        Err(e) => eprintln!("Error: {}", e),
-    }
-}
-```
-
-*Note: The actual implementation details and entry point function names
-might differ based on your specific project structure.*
-
 ## Error Handling
 
 The interpreter defines specific error types for scanning (`ScannerError`),
@@ -94,7 +78,6 @@ Possible areas for future development include:
 
 *   Adding more language features (arrays, dictionaries, etc.)
 *   Implementing a just-in-time (JIT) compiler for performance.
-*   Improving error reporting with source code context.
 *   Adding a standard library of built-in functions.
 *   Optimizing the interpreter's performance.
 
@@ -104,7 +87,11 @@ for more detailed information.
 */
 
 fn main() -> ExitCode {
-    let source = "1 + 33 / 0";
+    let source = r#"
+    1 + 33 * (1/44);
+    print true;
+    "#;
+
     println!("\nRunning: {}", source);
 
     let tokens = match tokenize(source) {
@@ -116,19 +103,17 @@ fn main() -> ExitCode {
     };
     println!("Tokens: {:?}", tokens);
 
-    let expr = match parse(tokens) {
+    let stmts = match parse(tokens) {
         Ok(e) => e,
-        Err(e) => {
-            eprintln!("{}", e);
+        Err(errors) => {
+            // TODO: think about the parser errors...
+            for error in errors {}
             return ExitCode::from(65);
         }
     };
 
-    match expr.accept(&Interpreter) {
-        Ok(res) => {
-            println!("Result: {}", res);
-            ExitCode::SUCCESS
-        }
+    match Interpreter.interprete(stmts) {
+        Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Runtime Error: {}", err);
             ExitCode::from(70)

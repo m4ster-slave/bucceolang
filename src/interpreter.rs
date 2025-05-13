@@ -1,8 +1,14 @@
-use crate::ast_types::*;
+use crate::expr_types::*;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
+use crate::stmt_types::StmtVisitor;
+use crate::stmt_types::*;
 use crate::token::TokenType;
 
+/// A struct responsible for interpreting a list of statements.
+///
+/// It processes each statement and can potentially return a `RuntimeError`
+/// if an issue occurs during execution.
 #[derive(Debug)]
 pub struct Interpreter;
 
@@ -10,7 +16,7 @@ impl ExprVisitor<Object> for Interpreter {
     // simply pull runtime expression back out of the token
     fn visit_literal_expr(
         &self,
-        expr: &crate::ast_types::LiteralExpr,
+        expr: &crate::expr_types::LiteralExpr,
     ) -> Result<Object, RuntimeError> {
         match &expr.literal.token_type() {
             TokenType::String
@@ -44,12 +50,15 @@ impl ExprVisitor<Object> for Interpreter {
     // evaluate the subexpression in the grouping
     fn visit_grouping_expr(
         &self,
-        expr: &crate::ast_types::GroupingExpr,
+        expr: &crate::expr_types::GroupingExpr,
     ) -> Result<Object, RuntimeError> {
         expr.expr.accept(self)
     }
 
-    fn visit_unary_expr(&self, expr: &crate::ast_types::UnaryExpr) -> Result<Object, RuntimeError> {
+    fn visit_unary_expr(
+        &self,
+        expr: &crate::expr_types::UnaryExpr,
+    ) -> Result<Object, RuntimeError> {
         let right = expr.operator.accept(self)?;
 
         match expr.prefix.token_type() {
@@ -70,7 +79,7 @@ impl ExprVisitor<Object> for Interpreter {
 
     fn visit_binary_expr(
         &self,
-        expr: &crate::ast_types::BinaryExpr,
+        expr: &crate::expr_types::BinaryExpr,
     ) -> Result<Object, RuntimeError> {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
@@ -172,6 +181,19 @@ impl ExprVisitor<Object> for Interpreter {
     }
 }
 
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expr_stmt(&self, stmt: &Expr) -> Result<(), RuntimeError> {
+        stmt.accept(self)?;
+        Ok(())
+    }
+
+    fn visit_print_stmt(&self, stmt: &Expr) -> Result<(), RuntimeError> {
+        let obj: Object = stmt.accept(self)?;
+        println!("{obj}");
+        Ok(())
+    }
+}
+
 /// Determines the truthiness of a runtime `Object`.
 ///
 /// In this language, `nil` and `false` are considered "falsey".
@@ -193,11 +215,40 @@ fn is_truthy(obj: &Object) -> bool {
     }
 }
 
+impl Interpreter {
+    /// Interprets a list of statements.
+    ///
+    /// Each statement in the provided vector is evaluated in order.
+    /// If any statement evaluation results in a `RuntimeError`, the
+    /// interpretation process is halted and the error is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `stmts`: A `Vec<Stmt>` containing the statements to be interpreted.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if all statements are interpreted successfully.
+    /// Returns `Err(RuntimeError)` if an error occurs during the evaluation
+    /// of any statement.
+    pub fn interprete(&self, stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
+        for stmt in stmts {
+            match stmt.evaluate(self) {
+                Err(e) => return Err(e),
+                Ok(_) => continue,
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::ast_types::*;
+    use crate::expr_types::*;
     use crate::interpreter::Interpreter;
     use crate::object::Object;
+    use crate::stmt_types::*;
     use crate::token::{Token, TokenType};
 
     fn create_number_token(value: f64, line: u64) -> Token {
@@ -218,8 +269,29 @@ mod tests {
         )
     }
 
+    fn create_print_token(value: String, line: u64) -> Token {
+        Token::new(TokenType::Print, "print", None, line)
+    }
+
     fn create_literal_expr(token: Token) -> Expr {
         Expr::Literal(LiteralExpr { literal: token })
+    }
+
+    fn create_print_stmt(expr: Expr) -> Stmt {
+        Stmt::Print(expr)
+    }
+
+    #[test]
+    fn test_create_print_stmt() {
+        let interpreter = Interpreter;
+        let print_stmt = create_print_stmt(create_literal_expr(create_number_token(50.0, 1)));
+
+        let result = print_stmt.evaluate(&interpreter);
+        assert!(
+            result.is_ok(),
+            "Expected function to succeed, but got an error: {:?}",
+            result.err()
+        );
     }
 
     #[test]
