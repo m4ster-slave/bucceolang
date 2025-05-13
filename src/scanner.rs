@@ -4,6 +4,30 @@ use crate::{
     token::{Token, TokenType},
 };
 
+/// Tokenizes the input string into a vector of `Token` structs.
+///
+/// This function iterates through the input string character by character,
+/// identifying different token types such as operators, keywords, literals,
+/// and identifiers. It handles whitespace, comments, and tracks line numbers
+/// for error reporting.
+///
+/// # Arguments
+///
+/// * `input` - The string slice to tokenize.
+///
+/// # Returns
+///
+/// A `Result` containing a `Vec<Token>` on success, or a `ScannerError`
+/// if an invalid syntax or unterminated string is encountered.
+///
+/// # Errors
+///
+/// Returns a `ScannerError` if:
+/// - An unterminated string literal is found.
+/// - An unexpected character or identifier is encountered.
+/// - A keyword is used as a variable name after the `var` keyword.
+/// - An invalid character is used to start a variable name after the `var` keyword.
+/// - The `var` keyword is not followed by a variable name.
 pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
     let mut out: Vec<Token> = Vec::new();
     let mut line_number: u64 = 1;
@@ -294,6 +318,24 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
     Ok(out)
 }
 
+/// Checks if a given character is valid for use within a variable name.
+///
+/// Valid characters include:
+/// - Uppercase letters (A-Z)
+/// - Lowercase letters (a-z)
+/// - Underscore (_)
+///
+/// Digits (0-9) are also valid, but *cannot* be the first character of a variable name.
+///
+/// # Arguments
+///
+/// * `c` - The character to check.
+/// * `is_first_char` - A boolean indicating whether this character is the first
+///   character of the variable name being examined.
+///
+/// # Returns
+///
+/// `true` if the character is valid in the given context, `false` otherwise.
 fn is_valid_variable_char(c: char, is_first_char: bool) -> bool {
     match c {
         'a'..='z' | 'A'..='Z' | '_' => true,
@@ -302,6 +344,18 @@ fn is_valid_variable_char(c: char, is_first_char: bool) -> bool {
     }
 }
 
+/// Checks if a given string slice is a reserved keyword in the language.
+///
+/// This function determines if a string is one of the predefined keywords
+/// that cannot be used as a variable identifier.
+///
+/// # Arguments
+///
+/// * `var` - The string slice to check.
+///
+/// # Returns
+///
+/// `true` if the string is a keyword, `false` otherwise.
 fn is_keyword(var: &str) -> bool {
     vec![
         "else", "false", "for", "fun", "if", "nil", "print", "return", "super", "this", "true",

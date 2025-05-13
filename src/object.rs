@@ -1,8 +1,16 @@
+/// Represents the different types of values that can be produced and manipulated by the interpreter.
+///
+/// These are the runtime values of the language, such as the absence of a value (`Nil`),
+/// boolean true/false, floating-point numbers, and strings.
 #[derive(Debug, Clone)]
 pub enum Object {
+    /// Represents the absence of a value, similar to `null` in other languages.
     Nil,
+    /// Represents a boolean value, either `true` or `false`.
     Boolean(bool),
+    /// Represents a floating-point number.
     Number(f64),
+    /// Represents a text string.
     String(String),
 }
 

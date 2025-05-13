@@ -172,10 +172,23 @@ impl ExprVisitor<Object> for Interpreter {
     }
 }
 
+/// Determines the truthiness of a runtime `Object`.
+///
+/// In this language, `nil` and `false` are considered "falsey".
+/// All other object types (numbers, strings, `true` boolean) are considered "truthy".
+///
+/// # Arguments
+///
+/// * `obj` - A reference to the `Object` to check for truthiness.
+///
+/// # Returns
+///
+/// `true` if the object is truthy, `false` if it is falsey.
 fn is_truthy(obj: &Object) -> bool {
     match obj {
         Object::Nil => false,
         Object::Boolean(value) => *value,
+        // Any other Object type is considered truthy.
         _ => true,
     }
 }

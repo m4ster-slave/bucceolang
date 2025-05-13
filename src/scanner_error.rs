@@ -1,6 +1,14 @@
+/// Represents possible errors that can occur during the scanning (tokenization) process.
 #[derive(Debug, Clone)]
 pub enum ScannerError {
+    /// Indicates an invalid variable name was encountered.
+    /// The first element is the line number where the error occurred.
+    /// The second element is a descriptive error message.
     InvalidVariableName(u64, String),
+
+    /// Indicates a general syntax error was encountered.
+    /// The first element is the line number where the error occurred.
+    /// The second element is a descriptive error message.
     InvalidSyntax(u64, String),
 }
 

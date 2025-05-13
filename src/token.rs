@@ -1,36 +1,46 @@
 use std::fmt;
 
+/// Represents the different types of tokens that can be produced by the scanner.
 #[derive(Debug, Clone)]
 pub enum TokenType {
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semicolon,
-    Asterisk,
-    BangEqual,
-    Bang,
-    EqualEqual,
-    Equal,
-    LessEqual,
-    Less,
-    GreaterEqual,
-    Greater,
-    Slash,
-    And,
-    Or,
-    BitwiseAnd,
-    BitwiseOr,
-    String,
-    Number,
+    // Single-character tokens
+    LeftParen,  // (
+    RightParen, // )
+    LeftBrace,  // {
+    RightBrace, // }
+    Comma,      // ,
+    Dot,        // .
+    Minus,      // -
+    Plus,       // +
+    Semicolon,  // ;
+    Asterisk,   // *
+
+    // One or two character tokens
+    BangEqual,    // !=
+    Bang,         // !
+    EqualEqual,   // ==
+    Equal,        // =
+    LessEqual,    // <=
+    Less,         // <
+    GreaterEqual, // >=
+    Greater,      // >
+    Slash,        // /
+
+    // Logical and Bitwise Operators
+    And,        // &&
+    Or,         // ||
+    BitwiseAnd, // &
+    BitwiseOr,  // |
+
+    // Literals
+    String, // "..."
+    Number, // 123, 123.45
+
+    // Keywords
     Else,
     False,
     For,
-    Fn,
+    Fn, // Represents the 'fun' keyword
     If,
     Nil,
     Print,
@@ -38,22 +48,40 @@ pub enum TokenType {
     Super,
     This,
     True,
-    VarKeyword,
-    Var,
+    VarKeyword, // Represents the 'var' keyword specifically when used for declaration
     While,
     Class,
+
+    // Identifier
+    Var, // Represents a variable or identifier name
+
+    // End of file
     EOF,
 }
 
+/// Represents a single token produced by the scanner.
 #[derive(Debug, Clone)]
 pub struct Token {
+    /// The type of the token.
     token_type: TokenType,
+    /// The raw string slice from the input that produced this token.
     lexeme: String,
+    /// The literal value of the token, if it's a literal (string, number, boolean, nil).
+    /// This is `None` for other token types.
     literal: Option<crate::object::Object>,
+    /// The line number in the input where this token was found.
     line: u64,
 }
 
 impl Token {
+    /// Creates a new `Token`.
+    ///
+    /// # Arguments
+    ///
+    /// * `token_type` - The type of the token.
+    /// * `lexeme` - The raw string slice from the input.
+    /// * `literal` - The literal value, if applicable (e.g., parsed number or string).
+    /// * `line` - The line number where the token was found.
     pub fn new(
         token_type: TokenType,
         lexeme: &str,
@@ -68,18 +96,22 @@ impl Token {
         }
     }
 
+    /// Returns a reference to the token's type.
     pub fn token_type(&self) -> &TokenType {
         &self.token_type
     }
 
+    /// Returns the line number where the token was found.
     pub fn line(&self) -> u64 {
         self.line
     }
 
+    /// Returns a string slice representing the token's lexeme.
     pub fn lexeme(&self) -> &str {
         &self.lexeme
     }
 
+    /// Returns a reference to the token's literal value, if present.
     pub fn literal(&self) -> &Option<crate::object::Object> {
         &self.literal
     }
