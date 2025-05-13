@@ -113,10 +113,10 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                             }
                         }
                     } else {
-                        return Err(ScannerError::InvalidSyntax(format!(
-                            "[line {}] Error: Unterminated string.",
-                            line_number
-                        )));
+                        return Err(ScannerError::InvalidSyntax(
+                            line_number,
+                            "Unterminated string".to_string(),
+                        ));
                     }
                 }
             }
@@ -236,23 +236,27 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                                     }
 
                                     if is_keyword(&var) {
-                                        return Err(ScannerError::InvalidVariableName(format!(
-                                            "[line {}] Error: Variable name is a keyword: {}",
-                                            line_number, var
-                                        )));
+                                        return Err(ScannerError::InvalidVariableName(
+                                            line_number,
+                                            format!("Variable name is a keyword: {}", var),
+                                        ));
                                     }
 
                                     out.push(Token::new(TokenType::Var, &var, None, line_number));
                                 } else {
                                     return Err(ScannerError::InvalidVariableName(
-                                        format!("[line {}] Error: Invalid variable name start character: {}", line_number, var_char)
+                                        line_number,
+                                        format!(
+                                            "Invalid variable name start character: {}",
+                                            var_char
+                                        ),
                                     ));
                                 }
                             } else {
-                                return Err(ScannerError::InvalidSyntax(format!(
-                                    "[line {}] Error: Expected variable name after 'var' keyword",
-                                    line_number
-                                )));
+                                return Err(ScannerError::InvalidSyntax(
+                                    line_number,
+                                    "Expected variable name after 'var' keyword".to_string(),
+                                ));
                             }
                         }
                         "while" => {
@@ -277,10 +281,10 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                         }
                     }
 
-                    return Err(ScannerError::InvalidSyntax(format!(
-                        "[line {}] Error: Unexpected identifier: {}",
-                        line_number, identifier
-                    )));
+                    return Err(ScannerError::InvalidSyntax(
+                        line_number,
+                        format!("Unexpected identifier: {}", identifier),
+                    ));
                 }
             }
         }
@@ -562,7 +566,7 @@ mod tests {
         let result = tokenize(input);
         assert!(result.is_err());
         match result {
-            Err(ScannerError::InvalidSyntax(msg)) => {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
                 assert!(msg.contains("Unterminated string"));
             }
             _ => panic!("Expected InvalidSyntax error"),
@@ -575,7 +579,7 @@ mod tests {
         let result = tokenize(input);
         assert!(result.is_err());
         match result {
-            Err(ScannerError::InvalidVariableName(msg)) => {
+            Err(ScannerError::InvalidVariableName(_, msg)) => {
                 assert!(msg.contains("Variable name is a keyword"));
             }
             _ => panic!("Expected InvalidVariableName error"),
@@ -588,7 +592,7 @@ mod tests {
         let result = tokenize(input);
         assert!(result.is_err());
         match result {
-            Err(ScannerError::InvalidSyntax(msg)) => {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
                 assert!(msg.contains("Unexpected identifier"));
             }
             _ => panic!("Expected InvalidSyntax error"),
@@ -641,7 +645,7 @@ mod tests {
         let result = tokenize(input);
         assert!(result.is_err());
         match result {
-            Err(ScannerError::InvalidSyntax(msg)) => {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
                 assert!(msg.contains("Expected variable name after 'var' keyword"));
             }
             _ => panic!("Expected InvalidSyntax error"),
@@ -654,7 +658,7 @@ mod tests {
         let result = tokenize(input);
         assert!(result.is_err());
         match result {
-            Err(ScannerError::InvalidVariableName(msg)) => {
+            Err(ScannerError::InvalidVariableName(_, msg)) => {
                 assert!(msg.contains("Invalid variable name start character"));
             }
             _ => panic!("Expected InvalidVariableName error"),
