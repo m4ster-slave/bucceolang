@@ -1,98 +1,60 @@
-#[derive(Debug, Clone)]
-pub enum Token {
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semicolon,
-    Asterisk,
-    BangEqual,
-    Bang,
-    EqualEqual,
-    Equal,
-    LessEqual,
-    Less,
-    GreaterEqual,
-    Greater,
-    Slash,
-    And,
-    Or,
-    BitwiseAnd,
-    BitwiseOr,
-    String(String),
-    Number(String),
-    Else,
-    False,
-    For,
-    Fn,
-    If,
-    Nil,
-    Print,
-    Return,
-    Super,
-    This,
-    True,
-    VarKeyword,
-    Var(String),
-    While,
-    Class,
-}
+use crate::{
+    object::Object,
+    scanner_error::ScannerError,
+    token::{Token, TokenType},
+};
 
-pub fn tokenize(input: &str) -> Vec<Token> {
-    let mut out = Vec::new();
-    let mut line_number: u32 = 1;
+pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
+    let mut out: Vec<Token> = Vec::new();
+    let mut line_number: u64 = 1;
 
     let mut chars = input.chars();
     while let Some(char) = chars.next() {
         match char {
-            '(' => out.push(Token::LeftParen),
-            ')' => out.push(Token::RightParen),
-            '{' => out.push(Token::LeftBrace),
-            '}' => out.push(Token::RightBrace),
-            ',' => out.push(Token::Comma),
-            '.' => out.push(Token::Dot),
-            '-' => out.push(Token::Minus),
-            '+' => out.push(Token::Plus),
-            ';' => out.push(Token::Semicolon),
-            '*' => out.push(Token::Asterisk),
+            '(' => out.push(Token::new(TokenType::LeftParen, "(", None, line_number)),
+            ')' => out.push(Token::new(TokenType::RightParen, ")", None, line_number)),
+            '{' => out.push(Token::new(TokenType::LeftBrace, "{", None, line_number)),
+            '}' => out.push(Token::new(TokenType::RightBrace, "}", None, line_number)),
+            ',' => out.push(Token::new(TokenType::Comma, ",", None, line_number)),
+            '.' => out.push(Token::new(TokenType::Dot, ".", None, line_number)),
+            '-' => out.push(Token::new(TokenType::Minus, "-", None, line_number)),
+            '+' => out.push(Token::new(TokenType::Plus, "+", None, line_number)),
+            ';' => out.push(Token::new(TokenType::Semicolon, ";", None, line_number)),
+            '*' => out.push(Token::new(TokenType::Asterisk, "*", None, line_number)),
             '!' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::BangEqual);
+                    out.push(Token::new(TokenType::BangEqual, "!=", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::Bang);
+                    out.push(Token::new(TokenType::Bang, "!", None, line_number));
                 }
             }
             '=' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::EqualEqual);
+                    out.push(Token::new(TokenType::EqualEqual, "==", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::Equal);
+                    out.push(Token::new(TokenType::Equal, "=", None, line_number));
                 }
             }
             '<' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::LessEqual);
+                    out.push(Token::new(TokenType::LessEqual, "<=", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::Less);
+                    out.push(Token::new(TokenType::Less, "<", None, line_number));
                 }
             }
             '>' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::GreaterEqual);
+                    out.push(Token::new(TokenType::GreaterEqual, ">=", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::Greater);
+                    out.push(Token::new(TokenType::Greater, ">", None, line_number));
                 }
             }
             '/' => {
@@ -106,7 +68,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                         }
                     }
                 } else {
-                    out.push(Token::Slash);
+                    out.push(Token::new(TokenType::Slash, "/", None, line_number));
                 }
             }
             '\n' => line_number += 1,
@@ -134,7 +96,14 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                         } else if char == '\\' {
                             escaped = true;
                         } else if char == '"' {
-                            out.push(Token::String(string_literal));
+                            // Create string object here when we have Object impl
+                            let value = Some(Object::String(string_literal.clone()));
+                            out.push(Token::new(
+                                TokenType::String,
+                                &format!("\"{}\"", string_literal),
+                                value,
+                                line_number,
+                            ));
                             break;
                         } else {
                             string_literal.push(char);
@@ -144,26 +113,29 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                             }
                         }
                     } else {
-                        panic!("[line {}] Error: Unterminated string.", line_number);
+                        return Err(ScannerError::InvalidSyntax(
+                            line_number,
+                            "Unterminated string".to_string(),
+                        ));
                     }
                 }
             }
             '&' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('&') {
-                    out.push(Token::And);
+                    out.push(Token::new(TokenType::And, "&&", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::BitwiseAnd);
+                    out.push(Token::new(TokenType::BitwiseAnd, "&", None, line_number));
                 }
             }
             '|' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('|') {
-                    out.push(Token::Or);
+                    out.push(Token::new(TokenType::Or, "||", None, line_number));
                     chars.next();
                 } else {
-                    out.push(Token::BitwiseOr);
+                    out.push(Token::new(TokenType::BitwiseOr, "|", None, line_number));
                 }
             }
             '0'..='9' => {
@@ -182,7 +154,15 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                         break;
                     }
                 }
-                out.push(Token::Number(number_literal));
+
+                // Create number object here when we have Object impl
+                let value = Some(Object::Number(number_literal.parse().unwrap_or(0.0)));
+                out.push(Token::new(
+                    TokenType::Number,
+                    &number_literal,
+                    value,
+                    line_number,
+                ));
             }
             _ => {
                 if char.is_alphabetic() || char == '_' {
@@ -198,19 +178,34 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                     }
 
                     match identifier.as_str() {
-                        "else" => out.push(Token::Else),
-                        "false" => out.push(Token::False),
-                        "for" => out.push(Token::For),
-                        "fun" => out.push(Token::Fn),
-                        "if" => out.push(Token::If),
-                        "nil" => out.push(Token::Nil),
-                        "print" => out.push(Token::Print),
-                        "return" => out.push(Token::Return),
-                        "super" => out.push(Token::Super),
-                        "this" => out.push(Token::This),
-                        "true" => out.push(Token::True),
+                        "else" => out.push(Token::new(TokenType::Else, "else", None, line_number)),
+                        "false" => {
+                            let value = Some(Object::Boolean(false));
+                            out.push(Token::new(TokenType::False, "false", value, line_number))
+                        }
+                        "for" => out.push(Token::new(TokenType::For, "for", None, line_number)),
+                        "fun" => out.push(Token::new(TokenType::Fn, "fun", None, line_number)),
+                        "if" => out.push(Token::new(TokenType::If, "if", None, line_number)),
+                        "nil" => {
+                            let value = Some(Object::Nil);
+                            out.push(Token::new(TokenType::Nil, "nil", value, line_number))
+                        }
+                        "print" => {
+                            out.push(Token::new(TokenType::Print, "print", None, line_number))
+                        }
+                        "return" => {
+                            out.push(Token::new(TokenType::Return, "return", None, line_number))
+                        }
+                        "super" => {
+                            out.push(Token::new(TokenType::Super, "super", None, line_number))
+                        }
+                        "this" => out.push(Token::new(TokenType::This, "this", None, line_number)),
+                        "true" => {
+                            let value = Some(Object::Boolean(true));
+                            out.push(Token::new(TokenType::True, "true", value, line_number))
+                        }
                         "var" => {
-                            out.push(Token::VarKeyword);
+                            out.push(Token::new(TokenType::VarKeyword, "var", None, line_number));
 
                             let mut var = String::new();
                             //skip whitespace to find variable name
@@ -227,12 +222,12 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 
                             // If we have a character after the whitespace, it's the start of the variable name
                             if let Some(var_char) = var_char_opt {
-                                if is_valid_variable_char(var_char, false) {
+                                if is_valid_variable_char(var_char, true) {
                                     var.push(var_char);
 
                                     // Parse the rest of the variable name
                                     while let Some(char) = chars.clone().peekable().peek() {
-                                        if is_valid_variable_char(*char, true) {
+                                        if is_valid_variable_char(*char, false) {
                                             var.push(*char);
                                             chars.next();
                                         } else {
@@ -241,51 +236,37 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                                     }
 
                                     if is_keyword(&var) {
-                                        panic!(
-                                            "[line {}] Error: Variable name is a keyword: {}",
-                                            line_number, var
-                                        );
+                                        return Err(ScannerError::InvalidVariableName(
+                                            line_number,
+                                            format!("Variable name is a keyword: {}", var),
+                                        ));
                                     }
 
-                                    out.push(Token::Var(var));
+                                    out.push(Token::new(TokenType::Var, &var, None, line_number));
                                 } else {
-                                    panic!(
-                                        "[line {}] Error: Invalid variable name start character: {}",
-                                        line_number, var_char
-                                    );
+                                    return Err(ScannerError::InvalidVariableName(
+                                        line_number,
+                                        format!(
+                                            "Invalid variable name start character: {}",
+                                            var_char
+                                        ),
+                                    ));
                                 }
                             } else {
-                                panic!(
-                                    "[line {}] Error: Expected variable name after 'var' keyword",
-                                    line_number
-                                );
+                                return Err(ScannerError::InvalidSyntax(
+                                    line_number,
+                                    "Expected variable name after 'var' keyword".to_string(),
+                                ));
                             }
                         }
-                        "while" => out.push(Token::While),
-                        "class" => out.push(Token::Class),
+                        "while" => {
+                            out.push(Token::new(TokenType::While, "while", None, line_number))
+                        }
+                        "class" => {
+                            out.push(Token::new(TokenType::Class, "class", None, line_number))
+                        }
                         _ => {
-                            let mut found = false;
-
-                            for token in &out {
-                                match token {
-                                    Token::Var(var) => {
-                                        if identifier == *var {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    _ => continue,
-                                }
-                            }
-
-                            if !found {
-                                panic!(
-                                    "[line {}] Error: Unexpected identifier: {}",
-                                    line_number, identifier
-                                );
-                            }
-
-                            out.push(Token::Var(identifier));
+                            out.push(Token::new(TokenType::Var, &identifier, None, line_number));
                         }
                     }
                 } else {
@@ -300,16 +281,17 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                         }
                     }
 
-                    panic!(
-                        "[line {}] Error: Unexpected identifier: {}",
-                        line_number, identifier
-                    );
+                    return Err(ScannerError::InvalidSyntax(
+                        line_number,
+                        format!("Unexpected identifier: {}", identifier),
+                    ));
                 }
             }
         }
     }
+    out.push(Token::new(TokenType::EOF, "", None, line_number));
 
-    out
+    Ok(out)
 }
 
 fn is_valid_variable_char(c: char, is_first_char: bool) -> bool {
@@ -330,7 +312,8 @@ fn is_keyword(var: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::scanner::*;
+    use crate::token::TokenType;
 
     #[test]
     fn test_is_keyword() {
@@ -351,120 +334,132 @@ mod tests {
     #[test]
     fn test_simple_tokens() {
         let input = "(){},.+-;*";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 10);
-        assert!(matches!(tokens[0], Token::LeftParen));
-        assert!(matches!(tokens[1], Token::RightParen));
-        assert!(matches!(tokens[2], Token::LeftBrace));
-        assert!(matches!(tokens[3], Token::RightBrace));
-        assert!(matches!(tokens[4], Token::Comma));
-        assert!(matches!(tokens[5], Token::Dot));
-        assert!(matches!(tokens[6], Token::Plus));
-        assert!(matches!(tokens[7], Token::Minus));
-        assert!(matches!(tokens[8], Token::Semicolon));
-        assert!(matches!(tokens[9], Token::Asterisk));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 11); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::LeftParen));
+        assert!(matches!(tokens[1].token_type(), TokenType::RightParen));
+        assert!(matches!(tokens[2].token_type(), TokenType::LeftBrace));
+        assert!(matches!(tokens[3].token_type(), TokenType::RightBrace));
+        assert!(matches!(tokens[4].token_type(), TokenType::Comma));
+        assert!(matches!(tokens[5].token_type(), TokenType::Dot));
+        assert!(matches!(tokens[6].token_type(), TokenType::Plus));
+        assert!(matches!(tokens[7].token_type(), TokenType::Minus));
+        assert!(matches!(tokens[8].token_type(), TokenType::Semicolon));
+        assert!(matches!(tokens[9].token_type(), TokenType::Asterisk));
     }
 
     #[test]
     fn test_comparison_operators() {
         let input = "< <= > >= == != = !";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 8);
-        assert!(matches!(tokens[0], Token::Less));
-        assert!(matches!(tokens[1], Token::LessEqual));
-        assert!(matches!(tokens[2], Token::Greater));
-        assert!(matches!(tokens[3], Token::GreaterEqual));
-        assert!(matches!(tokens[4], Token::EqualEqual));
-        assert!(matches!(tokens[5], Token::BangEqual));
-        assert!(matches!(tokens[6], Token::Equal));
-        assert!(matches!(tokens[7], Token::Bang));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 9); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::Less));
+        assert!(matches!(tokens[1].token_type(), TokenType::LessEqual));
+        assert!(matches!(tokens[2].token_type(), TokenType::Greater));
+        assert!(matches!(tokens[3].token_type(), TokenType::GreaterEqual));
+        assert!(matches!(tokens[4].token_type(), TokenType::EqualEqual));
+        assert!(matches!(tokens[5].token_type(), TokenType::BangEqual));
+        assert!(matches!(tokens[6].token_type(), TokenType::Equal));
+        assert!(matches!(tokens[7].token_type(), TokenType::Bang));
     }
 
     #[test]
     fn test_logical_operators() {
         let input = "&& || & |";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 4);
-        assert!(matches!(tokens[0], Token::And));
-        assert!(matches!(tokens[1], Token::Or));
-        assert!(matches!(tokens[2], Token::BitwiseAnd));
-        assert!(matches!(tokens[3], Token::BitwiseOr));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 5); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::And));
+        assert!(matches!(tokens[1].token_type(), TokenType::Or));
+        assert!(matches!(tokens[2].token_type(), TokenType::BitwiseAnd));
+        assert!(matches!(tokens[3].token_type(), TokenType::BitwiseOr));
     }
 
     #[test]
     fn test_string_literals() {
         let input = "\"hello world\" \"test\"";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 2);
-        assert!(matches!(&tokens[0], Token::String(s) if s == "hello world"));
-        assert!(matches!(&tokens[1], Token::String(s) if s == "test"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 3); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::String));
+        assert_eq!(tokens[0].lexeme(), "\"hello world\"");
+        assert!(matches!(tokens[1].token_type(), TokenType::String));
+        assert_eq!(tokens[1].lexeme(), "\"test\"");
     }
 
     #[test]
     fn test_number_literals() {
         let input = "123 45.67 0 9.0";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 4);
-        assert!(matches!(&tokens[0], Token::Number(s) if s == "123"));
-        assert!(matches!(&tokens[1], Token::Number(s) if s == "45.67"));
-        assert!(matches!(&tokens[2], Token::Number(s) if s == "0"));
-        assert!(matches!(&tokens[3], Token::Number(s) if s == "9.0"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 5); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::Number));
+        assert_eq!(tokens[0].lexeme(), "123");
+        assert!(matches!(tokens[1].token_type(), TokenType::Number));
+        assert_eq!(tokens[1].lexeme(), "45.67");
+        assert!(matches!(tokens[2].token_type(), TokenType::Number));
+        assert_eq!(tokens[2].lexeme(), "0");
+        assert!(matches!(tokens[3].token_type(), TokenType::Number));
+        assert_eq!(tokens[3].lexeme(), "9.0");
     }
 
     #[test]
     fn test_keywords() {
         let input = "else false for fun if nil print return super this true while class";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 13);
-        assert!(matches!(tokens[0], Token::Else));
-        assert!(matches!(tokens[1], Token::False));
-        assert!(matches!(tokens[2], Token::For));
-        assert!(matches!(tokens[3], Token::Fn));
-        assert!(matches!(tokens[4], Token::If));
-        assert!(matches!(tokens[5], Token::Nil));
-        assert!(matches!(tokens[6], Token::Print));
-        assert!(matches!(tokens[7], Token::Return));
-        assert!(matches!(tokens[8], Token::Super));
-        assert!(matches!(tokens[9], Token::This));
-        assert!(matches!(tokens[10], Token::True));
-        assert!(matches!(tokens[11], Token::While));
-        assert!(matches!(tokens[12], Token::Class));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 14); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::Else));
+        assert!(matches!(tokens[1].token_type(), TokenType::False));
+        assert!(matches!(tokens[2].token_type(), TokenType::For));
+        assert!(matches!(tokens[3].token_type(), TokenType::Fn));
+        assert!(matches!(tokens[4].token_type(), TokenType::If));
+        assert!(matches!(tokens[5].token_type(), TokenType::Nil));
+        assert!(matches!(tokens[6].token_type(), TokenType::Print));
+        assert!(matches!(tokens[7].token_type(), TokenType::Return));
+        assert!(matches!(tokens[8].token_type(), TokenType::Super));
+        assert!(matches!(tokens[9].token_type(), TokenType::This));
+        assert!(matches!(tokens[10].token_type(), TokenType::True));
+        assert!(matches!(tokens[11].token_type(), TokenType::While));
+        assert!(matches!(tokens[12].token_type(), TokenType::Class));
     }
 
     #[test]
     fn test_var_declaration() {
         let input = "var myVar";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 2);
-        assert!(matches!(tokens[0], Token::VarKeyword));
-        assert!(matches!(&tokens[1], Token::Var(s) if s == "myVar"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 3); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::VarKeyword));
+        assert!(matches!(tokens[1].token_type(), TokenType::Var));
+        assert_eq!(tokens[1].lexeme(), "myVar");
     }
 
     #[test]
     fn test_var_reference() {
         let input = "var myVar\nmyVar";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 3);
-        assert!(matches!(tokens[0], Token::VarKeyword));
-        assert!(matches!(&tokens[1], Token::Var(s) if s == "myVar"));
-        assert!(matches!(&tokens[2], Token::Var(s) if s == "myVar"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 4); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::VarKeyword));
+        assert!(matches!(tokens[1].token_type(), TokenType::Var));
+        assert_eq!(tokens[1].lexeme(), "myVar");
+        assert!(matches!(tokens[2].token_type(), TokenType::Var));
+        assert_eq!(tokens[2].lexeme(), "myVar");
     }
 
     #[test]
     fn test_comments() {
         let input = "// This is a comment\n123";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 1);
-        assert!(matches!(&tokens[0], Token::Number(s) if s == "123"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 2); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::Number));
+        assert_eq!(tokens[0].lexeme(), "123");
     }
 
     #[test]
     fn test_whitespace() {
         let input = "  \t\n123\n  456  ";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 2);
-        assert!(matches!(&tokens[0], Token::Number(s) if s == "123"));
-        assert!(matches!(&tokens[1], Token::Number(s) if s == "456"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 3); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::Number));
+        assert_eq!(tokens[0].lexeme(), "123");
+        assert!(matches!(tokens[1].token_type(), TokenType::Number));
+        assert_eq!(tokens[1].lexeme(), "456");
     }
 
     #[test]
@@ -479,80 +474,194 @@ mod tests {
         }
         "#;
 
-        let tokens = tokenize(input);
+        let tokens = tokenize(input).unwrap();
         // Check for expected tokens without asserting the exact count
         // Just verify that important tokens are present in correct order
         let mut iter = tokens.iter();
 
-        assert!(matches!(iter.next(), Some(Token::VarKeyword)));
-        assert!(matches!(iter.next(), Some(Token::Var(s)) if s == "answer"));
-        assert!(matches!(iter.next(), Some(Token::Equal)));
-        assert!(matches!(iter.next(), Some(Token::Number(s)) if s == "42"));
-        assert!(matches!(iter.next(), Some(Token::Semicolon)));
-        assert!(matches!(iter.next(), Some(Token::If)));
-        assert!(matches!(iter.next(), Some(Token::LeftParen)));
-        assert!(matches!(iter.next(), Some(Token::Var(s)) if s == "answer"));
-        assert!(matches!(iter.next(), Some(Token::EqualEqual)));
-        assert!(matches!(iter.next(), Some(Token::Number(s)) if s == "42"));
-        assert!(matches!(iter.next(), Some(Token::RightParen)));
-        assert!(matches!(iter.next(), Some(Token::LeftBrace)));
-        assert!(matches!(iter.next(), Some(Token::Print)));
-        assert!(matches!(iter.next(), Some(Token::String(s)) if s == "The answer!"));
-        assert!(matches!(iter.next(), Some(Token::Semicolon)));
-        assert!(matches!(iter.next(), Some(Token::RightBrace)));
-        assert!(matches!(iter.next(), Some(Token::Else)));
-        assert!(matches!(iter.next(), Some(Token::LeftBrace)));
-        assert!(matches!(iter.next(), Some(Token::Print)));
-        assert!(matches!(iter.next(), Some(Token::String(s)) if s == "Not the answer!"));
-        assert!(matches!(iter.next(), Some(Token::Semicolon)));
-        assert!(matches!(iter.next(), Some(Token::RightBrace)));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::VarKeyword
+        ));
+        let var_token = iter.next().unwrap();
+        assert!(matches!(var_token.token_type(), TokenType::Var));
+        assert_eq!(var_token.lexeme(), "answer");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Equal
+        ));
+        let num_token = iter.next().unwrap();
+        assert!(matches!(num_token.token_type(), TokenType::Number));
+        assert_eq!(num_token.lexeme(), "42");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Semicolon
+        ));
+        assert!(matches!(iter.next().unwrap().token_type(), TokenType::If));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::LeftParen
+        ));
+        let var_token = iter.next().unwrap();
+        assert!(matches!(var_token.token_type(), TokenType::Var));
+        assert_eq!(var_token.lexeme(), "answer");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::EqualEqual
+        ));
+        let num_token = iter.next().unwrap();
+        assert!(matches!(num_token.token_type(), TokenType::Number));
+        assert_eq!(num_token.lexeme(), "42");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::RightParen
+        ));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::LeftBrace
+        ));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Print
+        ));
+        let str_token = iter.next().unwrap();
+        assert!(matches!(str_token.token_type(), TokenType::String));
+        assert_eq!(str_token.lexeme(), "\"The answer!\"");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Semicolon
+        ));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::RightBrace
+        ));
+        assert!(matches!(iter.next().unwrap().token_type(), TokenType::Else));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::LeftBrace
+        ));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Print
+        ));
+        let str_token = iter.next().unwrap();
+        assert!(matches!(str_token.token_type(), TokenType::String));
+        assert_eq!(str_token.lexeme(), "\"Not the answer!\"");
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::Semicolon
+        ));
+        assert!(matches!(
+            iter.next().unwrap().token_type(),
+            TokenType::RightBrace
+        ));
+        assert!(matches!(iter.next().unwrap().token_type(), TokenType::EOF));
 
         assert!(iter.next().is_none());
     }
 
     #[test]
-    #[should_panic(expected = "Error: Unterminated string")]
     fn test_unterminated_string() {
         let input = "\"unterminated string";
-        tokenize(input);
+        let result = tokenize(input);
+        assert!(result.is_err());
+        match result {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
+                assert!(msg.contains("Unterminated string"));
+            }
+            _ => panic!("Expected InvalidSyntax error"),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Error: Variable name is a keyword")]
     fn test_var_keyword_name() {
         let input = "var if";
-        tokenize(input);
+        let result = tokenize(input);
+        assert!(result.is_err());
+        match result {
+            Err(ScannerError::InvalidVariableName(_, msg)) => {
+                assert!(msg.contains("Variable name is a keyword"));
+            }
+            _ => panic!("Expected InvalidVariableName error"),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Error: Unexpected identifier")]
     fn test_unexpected_identifier() {
         let input = "@invalid";
-        tokenize(input);
+        let result = tokenize(input);
+        assert!(result.is_err());
+        match result {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
+                assert!(msg.contains("Unexpected identifier"));
+            }
+            _ => panic!("Expected InvalidSyntax error"),
+        }
     }
 
     #[test]
     fn test_consecutive_var_declarations() {
         let input = "var x\nvar y";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 4);
-        assert!(matches!(tokens[0], Token::VarKeyword));
-        assert!(matches!(&tokens[1], Token::Var(s) if s == "x"));
-        assert!(matches!(tokens[2], Token::VarKeyword));
-        assert!(matches!(&tokens[3], Token::Var(s) if s == "y"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 5); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::VarKeyword));
+        let var_token = &tokens[1];
+        assert!(matches!(var_token.token_type(), TokenType::Var));
+        assert_eq!(var_token.lexeme(), "x");
+        assert!(matches!(tokens[2].token_type(), TokenType::VarKeyword));
+        let var_token = &tokens[3];
+        assert!(matches!(var_token.token_type(), TokenType::Var));
+        assert_eq!(var_token.lexeme(), "y");
     }
 
     #[test]
     fn test_string_with_escaped_quotes() {
         let input = r#""String with \"quotes\"";"#;
-        tokenize(input);
+        let tokens = tokenize(input).unwrap();
+        assert!(matches!(tokens[0].token_type(), TokenType::String));
+        assert_eq!(tokens[0].lexeme(), "\"String with \"quotes\"\"");
     }
 
     #[test]
     fn test_multiline_string() {
         let input = "\"String with\nmultiple\nlines\"";
-        let tokens = tokenize(input);
-        assert_eq!(tokens.len(), 1);
-        assert!(matches!(&tokens[0], Token::String(s) if s == "String with\nmultiple\nlines"));
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 2); // +1 for EOF
+        assert!(matches!(tokens[0].token_type(), TokenType::String));
+        assert_eq!(tokens[0].lexeme(), "\"String with\nmultiple\nlines\"");
+    }
+
+    #[test]
+    fn test_has_eof() {
+        let input = "\"Test\"";
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert!(matches!(tokens[1].token_type(), TokenType::EOF));
+    }
+
+    #[test]
+    fn test_missing_var_name() {
+        let input = "var ";
+        let result = tokenize(input);
+        assert!(result.is_err());
+        match result {
+            Err(ScannerError::InvalidSyntax(_, msg)) => {
+                assert!(msg.contains("Expected variable name after 'var' keyword"));
+            }
+            _ => panic!("Expected InvalidSyntax error"),
+        }
+    }
+
+    #[test]
+    fn test_invalid_var_name_start() {
+        let input = "var 1invalid";
+        let result = tokenize(input);
+        assert!(result.is_err());
+        match result {
+            Err(ScannerError::InvalidVariableName(_, msg)) => {
+                assert!(msg.contains("Invalid variable name start character"));
+            }
+            _ => panic!("Expected InvalidVariableName error"),
+        }
     }
 }
