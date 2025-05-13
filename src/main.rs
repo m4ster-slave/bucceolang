@@ -15,13 +15,13 @@ use std::process::ExitCode;
 use token::Token;
 
 fn main() -> ExitCode {
-    let source = "1 + (1 * 10)";
+    let source = "1 + 33 / 0";
     println!("\nRunning: {}", source);
 
     let tokens = match tokenize(source) {
         Ok(t) => t,
         Err(e) => {
-            eprintln!("Scanner Error: {}", e);
+            eprintln!("{}", e);
             return ExitCode::from(65);
         }
     };
@@ -30,7 +30,7 @@ fn main() -> ExitCode {
     let expr = match parse(tokens) {
         Ok(e) => e,
         Err(e) => {
-            eprintln!("Parsing Error: {}", e);
+            eprintln!("{}", e);
             return ExitCode::from(65);
         }
     };

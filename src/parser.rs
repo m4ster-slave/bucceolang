@@ -1,6 +1,5 @@
 use crate::ast_types::*;
 use crate::parser_error::{self, ParseError};
-use crate::runtime_error::RuntimeError;
 use crate::token::TokenType;
 use crate::Token;
 
@@ -31,7 +30,7 @@ impl Parser {
         match self.expression() {
             Ok(expr) if !self.had_error => Ok(Box::new(expr)),
             Ok(_) => Err("Parsing completed with errors.".into()),
-            Err(e) => Err(format!("Parse error: {}", e.message)),
+            Err(e) => Err(format!("Parsing error: {}", e.message)),
         }
     }
 
@@ -249,4 +248,534 @@ impl Parser {
 pub fn parse(token_input: Vec<Token>) -> Result<Box<Expr>, String> {
     let mut parser = Parser::new(token_input);
     parser.parse()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::object::Object;
+    use crate::token::{Token, TokenType};
+
+    fn create_token(
+        token_type: TokenType,
+        lexeme: &str,
+        line: u64,
+        literal: Option<Object>,
+    ) -> Token {
+        Token::new(token_type, lexeme, literal, line)
+    }
+
+    fn create_eof(line: u64) -> Token {
+        create_token(TokenType::EOF, "", line, None)
+    }
+
+    #[test]
+    fn test_parse_number_literal() {
+        let tokens = vec![
+            create_token(TokenType::Number, "123", 1, Some(Object::Number(123.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Literal(lit) => match lit.literal.literal() {
+                Some(Object::Number(val)) => assert_eq!(*val, 123.0),
+                _ => panic!("Expected number literal"),
+            },
+            _ => panic!("Expected literal expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_string_literal() {
+        let tokens = vec![
+            create_token(
+                TokenType::String,
+                "\"hello\"",
+                1,
+                Some(Object::String("hello".to_string())),
+            ),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Literal(lit) => match lit.literal.literal() {
+                Some(Object::String(val)) => assert_eq!(val, "hello"),
+                _ => panic!("Expected string literal"),
+            },
+            _ => panic!("Expected literal expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_boolean_literals() {
+        // Test true
+        let tokens = vec![
+            create_token(TokenType::True, "true", 1, Some(Object::Boolean(true))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Literal(lit) => match lit.literal.literal() {
+                Some(Object::Boolean(val)) => assert!(*val),
+                _ => panic!("Expected boolean literal"),
+            },
+            _ => panic!("Expected literal expression"),
+        }
+
+        // Test false
+        let tokens = vec![
+            create_token(TokenType::False, "false", 1, Some(Object::Boolean(false))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Literal(lit) => match lit.literal.literal() {
+                Some(Object::Boolean(val)) => assert!(!(*val)),
+                _ => panic!("Expected boolean literal"),
+            },
+            _ => panic!("Expected literal expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nil_literal() {
+        let tokens = vec![
+            create_token(TokenType::Nil, "nil", 1, Some(Object::Nil)),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Literal(lit) => match lit.literal.literal() {
+                Some(Object::Nil) => {}
+                _ => panic!("Expected nil literal"),
+            },
+            _ => panic!("Expected literal expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_grouping() {
+        let tokens = vec![
+            create_token(TokenType::LeftParen, "(", 1, None),
+            create_token(TokenType::Number, "123", 1, Some(Object::Number(123.0))),
+            create_token(TokenType::RightParen, ")", 1, None),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Grouping(group) => match group.expr.as_ref() {
+                Expr::Literal(lit) => match lit.literal.literal() {
+                    Some(Object::Number(val)) => assert_eq!(*val, 123.0),
+                    _ => panic!("Expected number literal inside grouping"),
+                },
+                _ => panic!("Expected literal expression inside grouping"),
+            },
+            _ => panic!("Expected grouping expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_unary_minus() {
+        let tokens = vec![
+            create_token(TokenType::Minus, "-", 1, None),
+            create_token(TokenType::Number, "123", 1, Some(Object::Number(123.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Unary(unary) => {
+                assert!(matches!(unary.prefix.token_type(), TokenType::Minus));
+                match unary.operator.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 123.0),
+                        _ => panic!("Expected number literal in unary expression"),
+                    },
+                    _ => panic!("Expected literal expression in unary operator"),
+                }
+            }
+            _ => panic!("Expected unary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_unary_bang() {
+        let tokens = vec![
+            create_token(TokenType::Bang, "!", 1, None),
+            create_token(TokenType::True, "true", 1, Some(Object::Boolean(true))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Unary(unary) => {
+                assert!(matches!(unary.prefix.token_type(), TokenType::Bang));
+                match unary.operator.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Boolean(val)) => assert!(*val),
+                        _ => panic!("Expected boolean literal in unary expression"),
+                    },
+                    _ => panic!("Expected literal expression in unary operator"),
+                }
+            }
+            _ => panic!("Expected unary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_binary_addition() {
+        let tokens = vec![
+            create_token(TokenType::Number, "1", 1, Some(Object::Number(1.0))),
+            create_token(TokenType::Plus, "+", 1, None),
+            create_token(TokenType::Number, "2", 1, Some(Object::Number(2.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Plus));
+
+                match binary.left.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 1.0),
+                        _ => panic!("Expected number literal for left operand"),
+                    },
+                    _ => panic!("Expected literal expression for left operand"),
+                }
+
+                match binary.right.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 2.0),
+                        _ => panic!("Expected number literal for right operand"),
+                    },
+                    _ => panic!("Expected literal expression for right operand"),
+                }
+            }
+            _ => panic!("Expected binary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_binary_subtraction() {
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::Minus, "-", 1, None),
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Minus));
+
+                match binary.left.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 5.0),
+                        _ => panic!("Expected number literal for left operand"),
+                    },
+                    _ => panic!("Expected literal expression for left operand"),
+                }
+
+                match binary.right.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 3.0),
+                        _ => panic!("Expected number literal for right operand"),
+                    },
+                    _ => panic!("Expected literal expression for right operand"),
+                }
+            }
+            _ => panic!("Expected binary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_binary_multiplication() {
+        let tokens = vec![
+            create_token(TokenType::Number, "2", 1, Some(Object::Number(2.0))),
+            create_token(TokenType::Asterisk, "*", 1, None),
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Asterisk));
+
+                match binary.left.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 2.0),
+                        _ => panic!("Expected number literal for left operand"),
+                    },
+                    _ => panic!("Expected literal expression for left operand"),
+                }
+
+                match binary.right.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 3.0),
+                        _ => panic!("Expected number literal for right operand"),
+                    },
+                    _ => panic!("Expected literal expression for right operand"),
+                }
+            }
+            _ => panic!("Expected binary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_binary_division() {
+        let tokens = vec![
+            create_token(TokenType::Number, "6", 1, Some(Object::Number(6.0))),
+            create_token(TokenType::Slash, "/", 1, None),
+            create_token(TokenType::Number, "2", 1, Some(Object::Number(2.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Slash));
+
+                match binary.left.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 6.0),
+                        _ => panic!("Expected number literal for left operand"),
+                    },
+                    _ => panic!("Expected literal expression for left operand"),
+                }
+
+                match binary.right.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 2.0),
+                        _ => panic!("Expected number literal for right operand"),
+                    },
+                    _ => panic!("Expected literal expression for right operand"),
+                }
+            }
+            _ => panic!("Expected binary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_comparison_operators() {
+        // Test >
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::Greater, ">", 1, None),
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Greater));
+            }
+            _ => panic!("Expected binary expression with > operator"),
+        }
+
+        // Test >=
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::GreaterEqual, ">=", 1, None),
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(
+                    binary.operator.token_type(),
+                    TokenType::GreaterEqual
+                ));
+            }
+            _ => panic!("Expected binary expression with >= operator"),
+        }
+
+        // Test <
+        let tokens = vec![
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_token(TokenType::Less, "<", 1, None),
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Less));
+            }
+            _ => panic!("Expected binary expression with < operator"),
+        }
+
+        // Test <=
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::LessEqual, "<=", 1, None),
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::LessEqual));
+            }
+            _ => panic!("Expected binary expression with <= operator"),
+        }
+    }
+
+    #[test]
+    fn test_parse_equality_operators() {
+        // Test ==
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::EqualEqual, "==", 1, None),
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(
+                    binary.operator.token_type(),
+                    TokenType::EqualEqual
+                ));
+            }
+            _ => panic!("Expected binary expression with == operator"),
+        }
+
+        // Test !=
+        let tokens = vec![
+            create_token(TokenType::Number, "5", 1, Some(Object::Number(5.0))),
+            create_token(TokenType::BangEqual, "!=", 1, None),
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::BangEqual));
+            }
+            _ => panic!("Expected binary expression with != operator"),
+        }
+    }
+
+    #[test]
+    fn test_parse_complex_expression() {
+        // Test 1 + 2 * 3
+        let tokens = vec![
+            create_token(TokenType::Number, "1", 1, Some(Object::Number(1.0))),
+            create_token(TokenType::Plus, "+", 1, None),
+            create_token(TokenType::Number, "2", 1, Some(Object::Number(2.0))),
+            create_token(TokenType::Asterisk, "*", 1, None),
+            create_token(TokenType::Number, "3", 1, Some(Object::Number(3.0))),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expr = parser.parse().unwrap();
+
+        // Should parse as (1 + (2 * 3)) due to operator precedence
+        match expr.as_ref() {
+            Expr::Binary(binary) => {
+                assert!(matches!(binary.operator.token_type(), TokenType::Plus));
+
+                match binary.left.as_ref() {
+                    Expr::Literal(lit) => match lit.literal.literal() {
+                        Some(Object::Number(val)) => assert_eq!(*val, 1.0),
+                        _ => panic!("Expected number literal for left operand"),
+                    },
+                    _ => panic!("Expected literal expression for left operand"),
+                }
+
+                match binary.right.as_ref() {
+                    Expr::Binary(inner_binary) => {
+                        assert!(matches!(
+                            inner_binary.operator.token_type(),
+                            TokenType::Asterisk
+                        ));
+                    }
+                    _ => panic!("Expected binary expression for right operand"),
+                }
+            }
+            _ => panic!("Expected binary expression"),
+        }
+    }
+
+    #[test]
+    fn test_parse_error_missing_paren() {
+        let tokens = vec![
+            create_token(TokenType::LeftParen, "(", 1, None),
+            create_token(TokenType::Number, "123", 1, Some(Object::Number(123.0))),
+            // Missing right paren
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let result = parser.parse();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_error_invalid_expression() {
+        let tokens = vec![
+            // Missing expression
+            create_token(TokenType::Plus, "+", 1, None),
+            create_eof(1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let result = parser.parse();
+
+        assert!(result.is_err());
+    }
 }

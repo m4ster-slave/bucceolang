@@ -31,7 +31,7 @@ fn token_to_string(token: &Token) -> String {
     match token.token_type() {
         TokenType::String => {
             if let Some(obj) = token.literal() {
-                format!("\"{}\"", obj.to_string())
+                format!("\"{}\"", obj)
             } else {
                 "\"\"".to_string()
             }

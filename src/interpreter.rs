@@ -22,17 +22,20 @@ impl ExprVisitor<Object> for Interpreter {
                 None => match expr.literal.token_type() {
                     TokenType::String => Ok(Object::String("".to_string())),
                     TokenType::Number => Err(RuntimeError::TypeError(
+                        expr.literal.line(),
                         "Expected a number literal, but found none.".to_string(),
                     )),
                     TokenType::True => Ok(Object::Boolean(true)),
                     TokenType::False => Ok(Object::Boolean(false)),
                     TokenType::Nil => Ok(Object::Nil),
                     _ => Err(RuntimeError::TypeError(
+                        expr.literal.line(),
                         "Unhandled literal type".to_string(),
                     )),
                 },
             },
             _ => Err(RuntimeError::TypeError(
+                expr.literal.line(),
                 "Not a valid literal to be parsed".to_string(),
             )),
         }
@@ -56,6 +59,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Number(-value))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.prefix.line(),
                         "Operand must be a number".to_string(),
                     ))
                 }
@@ -77,6 +81,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Number(left_val - right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands musst be numbers".to_string(),
                     ))
                 }
@@ -89,17 +94,19 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::String(format!("{}{}", left_val, right_val)))
                 }
                 _ => Err(RuntimeError::TypeError(
+                    expr.operator.line(),
                     "Operands must be two numbers or two strings".to_string(),
                 )),
             },
             TokenType::Slash => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     if *right_val == 0.0 {
-                        return Err(RuntimeError::DivisionByZero);
+                        return Err(RuntimeError::DivisionByZero(expr.operator.line()));
                     }
                     Ok(Object::Number(left_val / right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operand must be numbersr".to_string(),
                     ))
                 }
@@ -109,6 +116,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Number(left_val * right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
                 }
@@ -120,6 +128,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Boolean(left_val > right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
                 }
@@ -129,6 +138,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Boolean(left_val >= right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
                 }
@@ -138,6 +148,7 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Boolean(left_val < right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
                 }
@@ -147,13 +158,14 @@ impl ExprVisitor<Object> for Interpreter {
                     Ok(Object::Boolean(left_val <= right_val))
                 } else {
                     Err(RuntimeError::TypeError(
+                        expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
                 }
             }
 
-            TokenType::EqualEqual => Ok(Object::Boolean(is_equal(&left, &right))),
-            TokenType::BangEqual => Ok(Object::Boolean(!is_equal(&left, &right))),
+            TokenType::EqualEqual => Ok(Object::Boolean(left == right)),
+            TokenType::BangEqual => Ok(Object::Boolean(!(left == right))),
 
             _ => panic!("Unknown operator"),
         }
@@ -168,12 +180,429 @@ fn is_truthy(obj: &Object) -> bool {
     }
 }
 
-fn is_equal(a: &Object, b: &Object) -> bool {
-    match (a, b) {
-        (Object::Number(a_val), Object::Number(b_val)) => a_val == b_val,
-        (Object::String(a_val), Object::String(b_val)) => a_val == b_val,
-        (Object::Boolean(a_val), Object::Boolean(b_val)) => a_val == b_val,
-        (Object::Nil, Object::Nil) => true,
-        _ => false,
+#[cfg(test)]
+mod tests {
+    use crate::ast_types::*;
+    use crate::interpreter::Interpreter;
+    use crate::object::Object;
+    use crate::token::{Token, TokenType};
+
+    fn create_number_token(value: f64, line: u64) -> Token {
+        Token::new(
+            TokenType::Number,
+            &value.to_string(),
+            Some(Object::Number(value)),
+            line,
+        )
+    }
+
+    fn create_string_token(value: String, line: u64) -> Token {
+        Token::new(
+            TokenType::String,
+            &value.clone(),
+            Some(Object::String(value)),
+            line,
+        )
+    }
+
+    fn create_literal_expr(token: Token) -> Expr {
+        Expr::Literal(LiteralExpr { literal: token })
+    }
+
+    #[test]
+    fn test_literal_number() {
+        let interpreter = Interpreter;
+        let number_token = create_number_token(42.0, 1);
+        let expr = create_literal_expr(number_token);
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(42.0));
+    }
+
+    #[test]
+    fn test_literal_string() {
+        let interpreter = Interpreter;
+        let string_token = create_string_token("hello".to_string(), 1);
+        let expr = create_literal_expr(string_token);
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::String("hello".to_string()));
+    }
+
+    #[test]
+    fn test_literal_boolean() {
+        let interpreter = Interpreter;
+
+        // Test true
+        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
+        let expr = create_literal_expr(true_token);
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+
+        // Test false
+        let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
+        let expr = create_literal_expr(false_token);
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(false));
+    }
+
+    #[test]
+    fn test_literal_nil() {
+        let interpreter = Interpreter;
+        let nil_token = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 1);
+        let expr = create_literal_expr(nil_token);
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Nil);
+    }
+
+    #[test]
+    fn test_grouping_expr() {
+        let interpreter = Interpreter;
+        let number_token = create_number_token(42.0, 1);
+        let number_expr = create_literal_expr(number_token);
+
+        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
+        let right_paren = Token::new(TokenType::RightParen, ")", None, 1);
+        let expr = Expr::Grouping(GroupingExpr {
+            paren_open: left_paren,
+            expr: Box::new(number_expr),
+            paren_close: right_paren,
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(42.0));
+    }
+
+    #[test]
+    fn test_unary_minus() {
+        let interpreter = Interpreter;
+        let number_token = create_number_token(42.0, 1);
+        let number_expr = create_literal_expr(number_token);
+
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let expr = Expr::Unary(UnaryExpr {
+            prefix: minus_token,
+            operator: Box::new(number_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(-42.0));
+    }
+
+    #[test]
+    fn test_unary_bang() {
+        let interpreter = Interpreter;
+
+        // Test !true -> false
+        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
+        let true_expr = create_literal_expr(true_token);
+        let bang_token = Token::new(TokenType::Bang, "!", None, 1);
+        let expr = Expr::Unary(UnaryExpr {
+            prefix: bang_token.clone(),
+            operator: Box::new(true_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(false));
+
+        // Test !false -> true
+        let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
+        let false_expr = create_literal_expr(false_token);
+        let expr = Expr::Unary(UnaryExpr {
+            prefix: bang_token,
+            operator: Box::new(false_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+    }
+
+    #[test]
+    fn test_binary_arithmetic() {
+        let interpreter = Interpreter;
+
+        // Test 5 + 3 = 8
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: plus_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(8.0));
+    }
+
+    #[test]
+    fn test_binary_subtraction() {
+        let interpreter = Interpreter;
+
+        // Test 5 - 3 = 2
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: minus_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(2.0));
+    }
+
+    #[test]
+    fn test_binary_multiplication() {
+        let interpreter = Interpreter;
+
+        // Test 5 * 3 = 15
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: asterisk_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(15.0));
+    }
+
+    #[test]
+    fn test_binary_division() {
+        let interpreter = Interpreter;
+
+        // Test 6 / 3 = 2
+        let left_token = create_number_token(6.0, 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let slash_token = Token::new(TokenType::Slash, "/", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: slash_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(2.0));
+    }
+
+    #[test]
+    fn test_division_by_zero() {
+        let interpreter = Interpreter;
+
+        // Test 5 / 0 = error
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_number_token(0.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let slash_token = Token::new(TokenType::Slash, "/", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: slash_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_string_concatenation() {
+        let interpreter = Interpreter;
+
+        // Test "hello" + " world" = "hello world"
+        let left_token = create_string_token("hello".to_string(), 1);
+        let left_expr = create_literal_expr(left_token);
+        let right_token = create_string_token(" world".to_string(), 1);
+        let right_expr = create_literal_expr(right_token);
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: plus_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::String("hello world".to_string()));
+    }
+
+    #[test]
+    fn test_binary_comparison() {
+        let interpreter = Interpreter;
+
+        // Test 5 > 3 = true
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token.clone());
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token.clone());
+
+        let greater_token = Token::new(TokenType::Greater, ">", None, 1);
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: greater_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+
+        // Test 3 < 5 = true
+        let left_expr = create_literal_expr(right_token);
+        let right_expr = create_literal_expr(left_token);
+        let less_token = Token::new(TokenType::Less, "<", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: less_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+    }
+
+    #[test]
+    fn test_equality() {
+        let interpreter = Interpreter;
+
+        // Test 5 == 5 = true
+        let left_token = create_number_token(5.0, 1);
+        let left_expr = create_literal_expr(left_token.clone());
+        let right_token = create_number_token(5.0, 1);
+        let right_expr = create_literal_expr(right_token);
+
+        let eq_token = Token::new(TokenType::EqualEqual, "==", None, 1);
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: eq_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+
+        // Test 5 != 3 = true
+        let right_token = create_number_token(3.0, 1);
+        let right_expr = create_literal_expr(right_token);
+        let left_expr = create_literal_expr(left_token);
+        let neq_token = Token::new(TokenType::BangEqual, "!=", None, 1);
+
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(left_expr),
+            operator: neq_token,
+            right: Box::new(right_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Boolean(true));
+    }
+
+    #[test]
+    fn test_complex_expression() {
+        let interpreter = Interpreter;
+
+        // Test (5 + 3) * 2 = 16
+        let five_token = create_number_token(5.0, 1);
+        let five_expr = create_literal_expr(five_token);
+        let three_token = create_number_token(3.0, 1);
+        let three_expr = create_literal_expr(three_token);
+        let two_token = create_number_token(2.0, 1);
+        let two_expr = create_literal_expr(two_token);
+
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+        let addition = Expr::Binary(BinaryExpr {
+            left: Box::new(five_expr),
+            operator: plus_token,
+            right: Box::new(three_expr),
+        });
+
+        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
+        let right_paren = Token::new(TokenType::RightParen, "(", None, 1);
+        let grouping = Expr::Grouping(GroupingExpr {
+            paren_open: left_paren,
+            expr: Box::new(addition),
+            paren_close: right_paren,
+        });
+
+        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(grouping),
+            operator: asterisk_token,
+            right: Box::new(two_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Object::Number(16.0));
+    }
+
+    #[test]
+    fn test_type_errors() {
+        let interpreter = Interpreter;
+
+        // Test "string" - 5 (type error)
+        let string_token = create_string_token("string".to_string(), 1);
+        let string_expr = create_literal_expr(string_token);
+        let number_token = create_number_token(5.0, 1);
+        let number_expr = create_literal_expr(number_token);
+
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let expr = Expr::Binary(BinaryExpr {
+            left: Box::new(string_expr),
+            operator: minus_token,
+            right: Box::new(number_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_err());
+
+        // Test -"string" (type error)
+        let string_token = create_string_token("string".to_string(), 1);
+        let string_expr = create_literal_expr(string_token);
+
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let expr = Expr::Unary(UnaryExpr {
+            prefix: minus_token,
+            operator: Box::new(string_expr),
+        });
+
+        let result = expr.accept(&interpreter);
+        assert!(result.is_err());
     }
 }
