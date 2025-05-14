@@ -1,3 +1,4 @@
+use crate::environment::Environment;
 use crate::expr_types::*;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
@@ -10,7 +11,9 @@ use crate::token::TokenType;
 /// It processes each statement and can potentially return a `RuntimeError`
 /// if an issue occurs during execution.
 #[derive(Debug)]
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl ExprVisitor<Object> for Interpreter {
     // simply pull runtime expression back out of the token
@@ -179,6 +182,10 @@ impl ExprVisitor<Object> for Interpreter {
             _ => panic!("Unknown operator"),
         }
     }
+
+    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<Object, RuntimeError> {
+        self.environment.get(&expr.name).cloned()
+    }
 }
 
 impl StmtVisitor<()> for Interpreter {
@@ -191,6 +198,15 @@ impl StmtVisitor<()> for Interpreter {
         let obj: Object = stmt.accept(self)?;
         println!("{obj}");
         Ok(())
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<(), RuntimeError> {
+        let val = match &stmt.initializer {
+            Some(init) => init.accept(self)?,
+            None => Object::Nil,
+        };
+
+        self.environment.define(stmt.name.lexeme().to_string(), val)
     }
 }
 
@@ -231,7 +247,7 @@ impl Interpreter {
     /// Returns `Ok(())` if all statements are interpreted successfully.
     /// Returns `Err(RuntimeError)` if an error occurs during the evaluation
     /// of any statement.
-    pub fn interprete(&self, stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
+    pub fn interprete(&mut self, stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
         for stmt in stmts {
             match stmt.evaluate(self) {
                 Err(e) => return Err(e),
@@ -240,6 +256,12 @@ impl Interpreter {
         }
 
         Ok(())
+    }
+
+    pub fn new() -> Interpreter {
+        Interpreter {
+            environment: Environment::new(),
+        }
     }
 }
 
@@ -283,10 +305,10 @@ mod tests {
 
     #[test]
     fn test_create_print_stmt() {
-        let interpreter = Interpreter;
+        let mut interpreter = Interpreter::new();
         let print_stmt = create_print_stmt(create_literal_expr(create_number_token(50.0, 1)));
 
-        let result = print_stmt.evaluate(&interpreter);
+        let result = print_stmt.evaluate(&mut interpreter);
         assert!(
             result.is_ok(),
             "Expected function to succeed, but got an error: {:?}",
@@ -296,7 +318,7 @@ mod tests {
 
     #[test]
     fn test_literal_number() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
         let expr = create_literal_expr(number_token);
 
@@ -307,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_literal_string() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
         let string_token = create_string_token("hello".to_string(), 1);
         let expr = create_literal_expr(string_token);
 
@@ -318,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_literal_boolean() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test true
         let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
@@ -337,7 +359,7 @@ mod tests {
 
     #[test]
     fn test_literal_nil() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
         let nil_token = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 1);
         let expr = create_literal_expr(nil_token);
 
@@ -348,7 +370,7 @@ mod tests {
 
     #[test]
     fn test_grouping_expr() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
@@ -367,7 +389,7 @@ mod tests {
 
     #[test]
     fn test_unary_minus() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
@@ -384,7 +406,7 @@ mod tests {
 
     #[test]
     fn test_unary_bang() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test !true -> false
         let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
@@ -414,7 +436,7 @@ mod tests {
 
     #[test]
     fn test_binary_arithmetic() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 + 3 = 8
         let left_token = create_number_token(5.0, 1);
@@ -436,7 +458,7 @@ mod tests {
 
     #[test]
     fn test_binary_subtraction() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 - 3 = 2
         let left_token = create_number_token(5.0, 1);
@@ -458,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_binary_multiplication() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 * 3 = 15
         let left_token = create_number_token(5.0, 1);
@@ -480,7 +502,7 @@ mod tests {
 
     #[test]
     fn test_binary_division() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 6 / 3 = 2
         let left_token = create_number_token(6.0, 1);
@@ -502,7 +524,7 @@ mod tests {
 
     #[test]
     fn test_division_by_zero() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 / 0 = error
         let left_token = create_number_token(5.0, 1);
@@ -523,7 +545,7 @@ mod tests {
 
     #[test]
     fn test_string_concatenation() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test "hello" + " world" = "hello world"
         let left_token = create_string_token("hello".to_string(), 1);
@@ -545,7 +567,7 @@ mod tests {
 
     #[test]
     fn test_binary_comparison() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 > 3 = true
         let left_token = create_number_token(5.0, 1);
@@ -582,7 +604,7 @@ mod tests {
 
     #[test]
     fn test_equality() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test 5 == 5 = true
         let left_token = create_number_token(5.0, 1);
@@ -620,7 +642,7 @@ mod tests {
 
     #[test]
     fn test_complex_expression() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test (5 + 3) * 2 = 16
         let five_token = create_number_token(5.0, 1);
@@ -659,7 +681,7 @@ mod tests {
 
     #[test]
     fn test_type_errors() {
-        let interpreter = Interpreter;
+        let interpreter = Interpreter::new();
 
         // Test "string" - 5 (type error)
         let string_token = create_string_token("string".to_string(), 1);

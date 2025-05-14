@@ -1,3 +1,4 @@
+use crate::Token;
 use crate::{expr_types::Expr, runtime_error::RuntimeError};
 
 /// Represents the different types of statements in the abstract syntax tree (AST).
@@ -11,6 +12,7 @@ pub enum Stmt {
     /// (Is classified as statment so the program has a print statement to work with as all the
     /// features are being implemented)
     Print(Expr),
+    Var(VarStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -23,13 +25,22 @@ pub enum Stmt {
 pub trait StmtVisitor<T> {
     fn visit_expr_stmt(&self, stmt: &Expr) -> Result<T, RuntimeError>;
     fn visit_print_stmt(&self, stmt: &Expr) -> Result<T, RuntimeError>;
+    // need to borrow here as mutable because we have modifiy the environment
+    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
-    pub fn evaluate<T>(&self, visitor: &dyn StmtVisitor<T>) -> Result<T, RuntimeError> {
+    pub fn evaluate<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, RuntimeError> {
         match self {
             Stmt::Expression(expr) => visitor.visit_expr_stmt(expr),
             Stmt::Print(print_stmt) => visitor.visit_print_stmt(print_stmt),
+            Stmt::Var(var_stmt) => visitor.visit_var_stmt(var_stmt),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct VarStmt {
+    pub name: Token,
+    pub initializer: Option<Expr>,
 }

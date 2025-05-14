@@ -1,3 +1,4 @@
+mod environment;
 mod expr_types;
 mod interpreter;
 mod object;
@@ -88,8 +89,9 @@ for more detailed information.
 
 fn main() -> ExitCode {
     let source = r#"
-    1 + 33 * (1/44);
-    print true;
+    var a = 1;
+    var b = 2;
+    print a + b;
     "#;
 
     println!("\nRunning: {}", source);
@@ -112,7 +114,9 @@ fn main() -> ExitCode {
         }
     };
 
-    match Interpreter.interprete(stmts) {
+    let mut interpreter = Interpreter::new();
+
+    match interpreter.interprete(stmts) {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Runtime Error: {}", err);

@@ -14,6 +14,7 @@ pub enum Expr {
     Unary(UnaryExpr),
     /// Represents a binary operation (e.g., addition, subtraction, comparison).
     Binary(BinaryExpr),
+    Variable(VariableExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -67,6 +68,17 @@ pub trait ExprVisitor<T> {
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, RuntimeError>;
+
+    /// Visits a `VariableExpr` node.
+    ///
+    /// # Arguments
+    ///
+    /// * `expr` - A reference to the `VariableExpr` node to visit.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the visitor's result or a `RuntimeError`.
+    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -92,6 +104,7 @@ impl Expr {
             Expr::Grouping(expr) => visitor.visit_grouping_expr(expr),
             Expr::Unary(expr) => visitor.visit_unary_expr(expr),
             Expr::Binary(expr) => visitor.visit_binary_expr(expr),
+            Expr::Variable(expr) => visitor.visit_variable_expr(expr),
         }
     }
 }
@@ -132,4 +145,10 @@ pub struct BinaryExpr {
     pub operator: Token,
     /// The right-hand side operand of the binary operation.
     pub right: Box<Expr>,
+}
+
+/// Wrapper around the variable name token
+#[derive(Debug, Clone)]
+pub struct VariableExpr {
+    pub name: Token,
 }

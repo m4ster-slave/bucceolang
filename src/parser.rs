@@ -1,6 +1,6 @@
 use crate::expr_types::*;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::Stmt;
+use crate::stmt_types::{Stmt, VarStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -240,6 +240,12 @@ impl Parser {
                 literal: self.previous().clone(),
             }));
         }
+        if let TokenType::Var = &self.peek().token_type() {
+            self.advance();
+            return Ok(Expr::Variable(VariableExpr {
+                name: self.previous().clone(),
+            }));
+        }
         if self.match_token(TokenType::LeftParen) {
             let paren_open = self.previous().clone();
             let expr = self.expression().map_err(|e| {
@@ -439,7 +445,7 @@ pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
     let mut parser_errors: Vec<ParseError> = Vec::new();
 
     while !parser.is_at_end() {
-        match statement(&mut parser) {
+        match declaration(&mut parser) {
             Ok(statement) => stmts.push(statement),
             Err(error) => {
                 parser.had_error = true;
@@ -451,12 +457,50 @@ pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
     Ok(stmts)
 }
 
+fn declaration(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    match parser.peek().token_type() {
+        TokenType::VarKeyword => variable_declaration(parser),
+        _ => statement(parser),
+    }
+    .map_err(|e| {
+        parser.synchronize();
+        e
+    })
+}
+
 /// This function checks which kind of Statement a token is and returns it or throws a parsing
 /// error
 fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
     match parser.peek().token_type() {
         TokenType::Print => print_statement(parser),
         _ => expression_statement(parser),
+    }
+}
+
+fn variable_declaration(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    parser.advance();
+    let name: Token = if parser.match_token(TokenType::Var) {
+        parser.previous().clone()
+    } else {
+        return Err(error(
+            parser.peek(),
+            "Token is not a variable identifier".to_string(),
+        ));
+    };
+
+    let initializer: Option<Expr> = if parser.match_token(TokenType::Equal) {
+        Some(parser.expression()?)
+    } else {
+        None
+    };
+
+    if !parser.match_token(TokenType::Semicolon) {
+        return Err(error(
+            parser.peek(),
+            "Expect ';' after expression.".to_string(),
+        ));
+    } else {
+        Ok(Stmt::Var(VarStmt { name, initializer }))
     }
 }
 
