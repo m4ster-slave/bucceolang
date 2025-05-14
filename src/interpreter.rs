@@ -18,7 +18,7 @@ pub struct Interpreter {
 impl ExprVisitor<Object> for Interpreter {
     // simply pull runtime expression back out of the token
     fn visit_literal_expr(
-        &self,
+        &mut self,
         expr: &crate::expr_types::LiteralExpr,
     ) -> Result<Object, RuntimeError> {
         match &expr.literal.token_type() {
@@ -52,15 +52,15 @@ impl ExprVisitor<Object> for Interpreter {
 
     // evaluate the subexpression in the grouping
     fn visit_grouping_expr(
-        &self,
-        expr: &crate::expr_types::GroupingExpr,
+        &mut self,
+        expr: &mut crate::expr_types::GroupingExpr,
     ) -> Result<Object, RuntimeError> {
         expr.expr.accept(self)
     }
 
     fn visit_unary_expr(
-        &self,
-        expr: &crate::expr_types::UnaryExpr,
+        &mut self,
+        expr: &mut crate::expr_types::UnaryExpr,
     ) -> Result<Object, RuntimeError> {
         let right = expr.operator.accept(self)?;
 
@@ -81,8 +81,8 @@ impl ExprVisitor<Object> for Interpreter {
     }
 
     fn visit_binary_expr(
-        &self,
-        expr: &crate::expr_types::BinaryExpr,
+        &mut self,
+        expr: &mut crate::expr_types::BinaryExpr,
     ) -> Result<Object, RuntimeError> {
         let left = expr.left.accept(self)?;
         let right = expr.right.accept(self)?;
@@ -183,25 +183,31 @@ impl ExprVisitor<Object> for Interpreter {
         }
     }
 
-    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<Object, RuntimeError> {
+    fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Object, RuntimeError> {
         self.environment.get(&expr.name).cloned()
+    }
+
+    fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<Object, RuntimeError> {
+        let val = expr.value.accept(self)?;
+        self.environment.assign(expr.name.clone(), val.clone())?;
+        Ok(val)
     }
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_expr_stmt(&self, stmt: &Expr) -> Result<(), RuntimeError> {
+    fn visit_expr_stmt(&mut self, stmt: &mut Expr) -> Result<(), RuntimeError> {
         stmt.accept(self)?;
         Ok(())
     }
 
-    fn visit_print_stmt(&self, stmt: &Expr) -> Result<(), RuntimeError> {
+    fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<(), RuntimeError> {
         let obj: Object = stmt.accept(self)?;
         println!("{obj}");
         Ok(())
     }
 
-    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<(), RuntimeError> {
-        let val = match &stmt.initializer {
+    fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<(), RuntimeError> {
+        let val = match &mut stmt.initializer {
             Some(init) => init.accept(self)?,
             None => Object::Nil,
         };
@@ -247,7 +253,7 @@ impl Interpreter {
     /// Returns `Ok(())` if all statements are interpreted successfully.
     /// Returns `Err(RuntimeError)` if an error occurs during the evaluation
     /// of any statement.
-    pub fn interprete(&mut self, stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
+    pub fn interprete(&mut self, stmts: &mut Vec<Stmt>) -> Result<(), RuntimeError> {
         for stmt in stmts {
             match stmt.evaluate(self) {
                 Err(e) => return Err(e),
@@ -291,10 +297,6 @@ mod tests {
         )
     }
 
-    fn create_print_token(value: String, line: u64) -> Token {
-        Token::new(TokenType::Print, "print", None, line)
-    }
-
     fn create_literal_expr(token: Token) -> Expr {
         Expr::Literal(LiteralExpr { literal: token })
     }
@@ -306,7 +308,7 @@ mod tests {
     #[test]
     fn test_create_print_stmt() {
         let mut interpreter = Interpreter::new();
-        let print_stmt = create_print_stmt(create_literal_expr(create_number_token(50.0, 1)));
+        let mut print_stmt = create_print_stmt(create_literal_expr(create_number_token(50.0, 1)));
 
         let result = print_stmt.evaluate(&mut interpreter);
         assert!(
@@ -318,125 +320,125 @@ mod tests {
 
     #[test]
     fn test_literal_number() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
-        let expr = create_literal_expr(number_token);
+        let mut expr = create_literal_expr(number_token);
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(42.0));
     }
 
     #[test]
     fn test_literal_string() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let string_token = create_string_token("hello".to_string(), 1);
-        let expr = create_literal_expr(string_token);
+        let mut expr = create_literal_expr(string_token);
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::String("hello".to_string()));
     }
 
     #[test]
     fn test_literal_boolean() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test true
         let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
-        let expr = create_literal_expr(true_token);
-        let result = expr.accept(&interpreter);
+        let mut expr = create_literal_expr(true_token);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
 
         // Test false
         let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
-        let expr = create_literal_expr(false_token);
-        let result = expr.accept(&interpreter);
+        let mut expr = create_literal_expr(false_token);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(false));
     }
 
     #[test]
     fn test_literal_nil() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let nil_token = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 1);
-        let expr = create_literal_expr(nil_token);
+        let mut expr = create_literal_expr(nil_token);
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Nil);
     }
 
     #[test]
     fn test_grouping_expr() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
         let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
         let right_paren = Token::new(TokenType::RightParen, ")", None, 1);
-        let expr = Expr::Grouping(GroupingExpr {
+        let mut expr = Expr::Grouping(GroupingExpr {
             paren_open: left_paren,
             expr: Box::new(number_expr),
             paren_close: right_paren,
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(42.0));
     }
 
     #[test]
     fn test_unary_minus() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
         let minus_token = Token::new(TokenType::Minus, "-", None, 1);
-        let expr = Expr::Unary(UnaryExpr {
+        let mut expr = Expr::Unary(UnaryExpr {
             prefix: minus_token,
             operator: Box::new(number_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(-42.0));
     }
 
     #[test]
     fn test_unary_bang() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test !true -> false
         let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
         let true_expr = create_literal_expr(true_token);
         let bang_token = Token::new(TokenType::Bang, "!", None, 1);
-        let expr = Expr::Unary(UnaryExpr {
+        let mut expr = Expr::Unary(UnaryExpr {
             prefix: bang_token.clone(),
             operator: Box::new(true_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(false));
 
         // Test !false -> true
         let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
         let false_expr = create_literal_expr(false_token);
-        let expr = Expr::Unary(UnaryExpr {
+        let mut expr = Expr::Unary(UnaryExpr {
             prefix: bang_token,
             operator: Box::new(false_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
     }
 
     #[test]
     fn test_binary_arithmetic() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 + 3 = 8
         let left_token = create_number_token(5.0, 1);
@@ -445,20 +447,20 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let plus_token = Token::new(TokenType::Plus, "+", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: plus_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(8.0));
     }
 
     #[test]
     fn test_binary_subtraction() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 - 3 = 2
         let left_token = create_number_token(5.0, 1);
@@ -467,20 +469,20 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let minus_token = Token::new(TokenType::Minus, "-", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: minus_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(2.0));
     }
 
     #[test]
     fn test_binary_multiplication() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 * 3 = 15
         let left_token = create_number_token(5.0, 1);
@@ -489,20 +491,20 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: asterisk_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(15.0));
     }
 
     #[test]
     fn test_binary_division() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 6 / 3 = 2
         let left_token = create_number_token(6.0, 1);
@@ -511,20 +513,20 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let slash_token = Token::new(TokenType::Slash, "/", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: slash_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(2.0));
     }
 
     #[test]
     fn test_division_by_zero() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 / 0 = error
         let left_token = create_number_token(5.0, 1);
@@ -533,19 +535,19 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let slash_token = Token::new(TokenType::Slash, "/", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: slash_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_string_concatenation() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test "hello" + " world" = "hello world"
         let left_token = create_string_token("hello".to_string(), 1);
@@ -554,20 +556,20 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
         let plus_token = Token::new(TokenType::Plus, "+", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: plus_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::String("hello world".to_string()));
     }
 
     #[test]
     fn test_binary_comparison() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 > 3 = true
         let left_token = create_number_token(5.0, 1);
@@ -576,13 +578,13 @@ mod tests {
         let right_expr = create_literal_expr(right_token.clone());
 
         let greater_token = Token::new(TokenType::Greater, ">", None, 1);
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: greater_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
 
@@ -591,20 +593,20 @@ mod tests {
         let right_expr = create_literal_expr(left_token);
         let less_token = Token::new(TokenType::Less, "<", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: less_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
     }
 
     #[test]
     fn test_equality() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test 5 == 5 = true
         let left_token = create_number_token(5.0, 1);
@@ -613,13 +615,13 @@ mod tests {
         let right_expr = create_literal_expr(right_token);
 
         let eq_token = Token::new(TokenType::EqualEqual, "==", None, 1);
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: eq_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
 
@@ -629,20 +631,20 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let neq_token = Token::new(TokenType::BangEqual, "!=", None, 1);
 
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: neq_token,
             right: Box::new(right_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
     }
 
     #[test]
     fn test_complex_expression() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test (5 + 3) * 2 = 16
         let five_token = create_number_token(5.0, 1);
@@ -668,20 +670,20 @@ mod tests {
         });
 
         let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(grouping),
             operator: asterisk_token,
             right: Box::new(two_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Number(16.0));
     }
 
     #[test]
     fn test_type_errors() {
-        let interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new();
 
         // Test "string" - 5 (type error)
         let string_token = create_string_token("string".to_string(), 1);
@@ -690,13 +692,13 @@ mod tests {
         let number_expr = create_literal_expr(number_token);
 
         let minus_token = Token::new(TokenType::Minus, "-", None, 1);
-        let expr = Expr::Binary(BinaryExpr {
+        let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(string_expr),
             operator: minus_token,
             right: Box::new(number_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_err());
 
         // Test -"string" (type error)
@@ -704,12 +706,12 @@ mod tests {
         let string_expr = create_literal_expr(string_token);
 
         let minus_token = Token::new(TokenType::Minus, "-", None, 1);
-        let expr = Expr::Unary(UnaryExpr {
+        let mut expr = Expr::Unary(UnaryExpr {
             prefix: minus_token,
             operator: Box::new(string_expr),
         });
 
-        let result = expr.accept(&interpreter);
+        let result = expr.accept(&mut interpreter);
         assert!(result.is_err());
     }
 }

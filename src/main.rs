@@ -13,8 +13,12 @@ mod token;
 use interpreter::Interpreter;
 use parser::parse;
 use scanner::tokenize;
-use std::process::ExitCode;
 use token::Token;
+
+use std::env;
+use std::fs;
+use std::io::{self, Write};
+use std::process::ExitCode;
 
 /** # My Interpreter
 
@@ -88,14 +92,33 @@ for more detailed information.
 */
 
 fn main() -> ExitCode {
-    let source = r#"
-    var a = 1;
-    var b = 2;
-    print a + b;
-    "#;
+    let args: Vec<String> = env::args().collect();
 
+    if args.len() > 1 {
+        // File mode - read and run the specified file
+        let file_path = &args[1];
+
+        if !file_path.ends_with(".bl") {
+            eprintln!("Error: File must have .bl extension");
+            return ExitCode::from(64);
+        }
+
+        let source = match fs::read_to_string(file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                eprintln!("Error reading file '{}': {}", file_path, e);
+                return ExitCode::from(66);
+            }
+        };
+
+        run(&source)
+    } else {
+        run_repl()
+    }
+}
+
+fn run(source: &str) -> ExitCode {
     println!("\nRunning: {}", source);
-
     let tokens = match tokenize(source) {
         Ok(t) => t,
         Err(e) => {
@@ -104,8 +127,7 @@ fn main() -> ExitCode {
         }
     };
     println!("Tokens: {:?}", tokens);
-
-    let stmts = match parse(tokens) {
+    let mut stmts = match parse(tokens) {
         Ok(e) => e,
         Err(errors) => {
             // TODO: think about the parser errors...
@@ -113,14 +135,63 @@ fn main() -> ExitCode {
             return ExitCode::from(65);
         }
     };
-
     let mut interpreter = Interpreter::new();
-
-    match interpreter.interprete(stmts) {
+    match interpreter.interprete(&mut stmts) {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Runtime Error: {}", err);
             ExitCode::from(70)
         }
     }
+}
+
+fn run_repl() -> ExitCode {
+    let mut interpreter = Interpreter::new();
+
+    loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {
+                if input.trim() == "exit" {
+                    break;
+                }
+
+                let tokens = match tokenize(&input) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        continue;
+                    }
+                };
+
+                let mut stmts = match parse(tokens) {
+                    Ok(e) => e,
+                    Err(errors) => {
+                        // Handle parsing errors but continue REPL
+                        for error in errors {
+                            eprintln!("Parse error: {:?}", error);
+                        }
+                        continue;
+                    }
+                };
+
+                match interpreter.interprete(&mut stmts) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        eprintln!("Runtime Error: {}", err);
+                        // Continue REPL even after runtime errors
+                    }
+                }
+            }
+            Err(error) => {
+                eprintln!("Error reading input: {}", error);
+                return ExitCode::from(74);
+            }
+        }
+    }
+
+    ExitCode::SUCCESS
 }

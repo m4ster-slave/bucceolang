@@ -15,6 +15,7 @@ pub enum Expr {
     /// Represents a binary operation (e.g., addition, subtraction, comparison).
     Binary(BinaryExpr),
     Variable(VariableExpr),
+    Assign(AssignExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -34,7 +35,7 @@ pub trait ExprVisitor<T> {
     /// # Returns
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
-    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, RuntimeError>;
+    fn visit_literal_expr(&mut self, expr: &LiteralExpr) -> Result<T, RuntimeError>;
 
     /// Visits a `GroupingExpr` node.
     ///
@@ -45,7 +46,7 @@ pub trait ExprVisitor<T> {
     /// # Returns
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
-    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<T, RuntimeError>;
+    fn visit_grouping_expr(&mut self, expr: &mut GroupingExpr) -> Result<T, RuntimeError>;
 
     /// Visits a `UnaryExpr` node.
     ///
@@ -56,7 +57,7 @@ pub trait ExprVisitor<T> {
     /// # Returns
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
-    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<T, RuntimeError>;
+    fn visit_unary_expr(&mut self, expr: &mut UnaryExpr) -> Result<T, RuntimeError>;
 
     /// Visits a `BinaryExpr` node.
     ///
@@ -67,7 +68,7 @@ pub trait ExprVisitor<T> {
     /// # Returns
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
-    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, RuntimeError>;
+    fn visit_binary_expr(&mut self, expr: &mut BinaryExpr) -> Result<T, RuntimeError>;
 
     /// Visits a `VariableExpr` node.
     ///
@@ -78,7 +79,18 @@ pub trait ExprVisitor<T> {
     /// # Returns
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
-    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<T, RuntimeError>;
+    fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<T, RuntimeError>;
+
+    /// Visits a `VariableExpr` node.
+    ///
+    /// # Arguments
+    ///
+    /// * `expr` - A reference to the `VariableExpr` node to visit.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the visitor's result or a `RuntimeError`.
+    fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -98,13 +110,14 @@ impl Expr {
     /// # Returns
     ///
     /// A `Result` containing the result of the visitor's operation or a `RuntimeError`.
-    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, RuntimeError> {
+    pub fn accept<T>(&mut self, visitor: &mut dyn ExprVisitor<T>) -> Result<T, RuntimeError> {
         match self {
             Expr::Literal(expr) => visitor.visit_literal_expr(expr),
             Expr::Grouping(expr) => visitor.visit_grouping_expr(expr),
             Expr::Unary(expr) => visitor.visit_unary_expr(expr),
             Expr::Binary(expr) => visitor.visit_binary_expr(expr),
             Expr::Variable(expr) => visitor.visit_variable_expr(expr),
+            Expr::Assign(expr) => visitor.visit_assign_expr(expr),
         }
     }
 }
@@ -151,4 +164,11 @@ pub struct BinaryExpr {
 #[derive(Debug, Clone)]
 pub struct VariableExpr {
     pub name: Token,
+}
+
+/// Wrapper around the variable name token
+#[derive(Debug, Clone)]
+pub struct AssignExpr {
+    pub name: Token,
+    pub value: Box<Expr>,
 }

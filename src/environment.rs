@@ -38,6 +38,19 @@ impl Environment {
             )),
         }
     }
+
+    pub fn assign(&mut self, name: Token, value: Object) -> Result<(), RuntimeError> {
+        if self.values.contains_key(&name.lexeme().to_string()) {
+            self.values.insert(name.lexeme().to_owned(), value);
+
+            Ok(())
+        } else {
+            Err(RuntimeError::Other(
+                0,
+                format!("undefined variable \"{name}\""),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]

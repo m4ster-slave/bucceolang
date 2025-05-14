@@ -23,14 +23,14 @@ pub enum Stmt {
 ///
 /// The type parameter `T` represents the return type of the visitor methods.
 pub trait StmtVisitor<T> {
-    fn visit_expr_stmt(&self, stmt: &Expr) -> Result<T, RuntimeError>;
-    fn visit_print_stmt(&self, stmt: &Expr) -> Result<T, RuntimeError>;
+    fn visit_expr_stmt(&mut self, stmt: &mut Expr) -> Result<T, RuntimeError>;
+    fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<T, RuntimeError>;
     // need to borrow here as mutable because we have modifiy the environment
-    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<T, RuntimeError>;
+    fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
-    pub fn evaluate<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, RuntimeError> {
+    pub fn evaluate<T>(&mut self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, RuntimeError> {
         match self {
             Stmt::Expression(expr) => visitor.visit_expr_stmt(expr),
             Stmt::Print(print_stmt) => visitor.visit_print_stmt(print_stmt),

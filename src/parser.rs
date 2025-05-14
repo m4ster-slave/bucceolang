@@ -70,7 +70,28 @@ impl Parser {
     /// A `Result` containing an `Expr` on success, or a `ParseError` if a
     /// parsing error occurs during the expression parsing.
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr, ParseError> {
+        let expr = self.equality()?;
+
+        if self.match_token(TokenType::Equal) {
+            let equals = self.previous().clone();
+            let value = self.assignment()?;
+
+            match expr {
+                Expr::Variable(var_expr) => {
+                    return Ok(Expr::Assign(AssignExpr {
+                        name: var_expr.name,
+                        value: Box::new(value),
+                    }))
+                }
+                _ => return Err(error(&equals, "Invalid assignment target.".to_string())),
+            }
+        }
+
+        return Ok(expr);
     }
 
     /// Parses an equality expression (`==`, `!=`).
@@ -385,7 +406,7 @@ impl Parser {
     /// # Returns
     ///
     /// A reference to the `Token` at the `current - 1` position.
-    fn previous(&self) -> &Token {
+    fn previous(&mut self) -> &Token {
         &self.tokens[self.current - 1]
     }
 
