@@ -1,55 +1,53 @@
-# Lox Interpreter in Rust
+# Bucceloang Interpreter in Rust
 
-Ein Lox-Interpreter geschrieben in Rust, inspiriert vom Buch [_Crafting Interpreters_](https://craftinginterpreters.com/).  
-**Status:** ⚠️ _Noch in Entwicklung!_
+<p align="center">
+  <img src="assets/logo.png" alt="Bucceloang Logo" width="200"/>
+</p>
 
-## ✅ Bisher implementierte Kernfunktionen
+**Bucceloang** is a interpreter written in Rust, inspired by the book [_Crafting Interpreters_](https://craftinginterpreters.com/).
 
-- [x] Scanner (Tokenisierung)
-- [ ] Parser
-- [ ] Statische Analyse
-- [ ] Intermediate Representation (IR)
-- [ ] (Optimierungen)
-- [ ] Codegenerierung
-- [ ] (Bytecode Virtual Machine)
+**Status:** ⚠️ _In development!_
 
-## ▶️ Nutzung
+## 🧠 Language Features
 
-Derzeit unterstützt das CLI-Tool nur das Scannen (Tokenisieren) von `.lox` Dateien:
+- **Dynamically Typed** – No type annotations, types are checked at runtime.
+- **Garbage Collected** – Automatic memory management.
+- **Lexical Scoping** – Block-level variable visibility with closures.
+- **First-Class Functions** – Functions are values; supports closures.
+- **Built-in Types** – `number`, `string`, `boolean`, and `nil`.
 
-```bash
-$ ./your_program.sh tokenize test.lox
+## ▶️ Usage
+
+Run the interactive REPL:
+
+```sh
+cargo run
 ```
 
-## 📚 Sprachspezifikation
+Execute a script:
 
-Die Lox-Spezifikation findest du hier:  
-➡️ [Offizielle Dokumentation](https://craftinginterpreters.com/the-lox-language.html)
+```sh
+cargo run -- path/to/file.bl
+```
 
-## 📂 Projektdokumentation & Diagramme
+## ⚙️ Build Instructions
 
-Zur weiteren Orientierung und Projektplanung sind folgende Dokumente verfügbar:
+No external dependencies required. Just run:
 
-### 📄 Dokumentation
+```sh
+cargo build
+```
 
-- [📜 Pflichtenheft](./assets/pflichtenheft.md)
-- [🧱 Abstrakte Struktur](./assets/abstract.md)
-- [📊 Diagrammübersicht](./assets/diagramms.md)
-- [📅 Besprechungsprotokoll](./assets/protokoll.md)
+Rust stable is sufficient.
 
-### 🧩 Diagramme
+## 📂 Project Documentation
 
-- ![📌 Klassendiagramm](./assets/Klassendiagramm.png)
-- ![🎯 Use-Case-Diagramm](./assets/Use_Case_Diagramm.png)
+Generate and open the project documentation with:
 
-### 🖼️ Logos & Grafiken
+```sh
+cargo doc --open
+```
 
-- ![🖼️ Logo PNG](./assets/logo.png)
-- ![🖼️ Logo JPEG](./assets/logo.jpeg)
-
----
-
-## 📖 Verwendete Ressourcen
+## 📖 Resources Used
 
 - 📘 [_Crafting Interpreters_ – Robert Nystrom](https://craftinginterpreters.com/)
-- 💻 [CodeCrafters Interpreter-Kurs](https://app.codecrafters.io/courses/interpreter/introduction)
