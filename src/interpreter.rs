@@ -197,6 +197,22 @@ impl ExprVisitor<Object> for Interpreter {
             .assign(expr.name.clone(), val.clone())?;
         Ok(val)
     }
+
+    fn visit_logical_expr(&mut self, expr: &mut LogicalExpr) -> Result<Object, RuntimeError> {
+        let left = expr.left.accept(self)?;
+
+        if std::mem::discriminant(expr.operator.token_type())
+            == std::mem::discriminant(&TokenType::Or)
+        {
+            if is_truthy(&left) {
+                return Ok(left);
+            }
+        } else if !is_truthy(&left) {
+            return Ok(left);
+        }
+
+        expr.right.accept(self)
+    }
 }
 
 impl StmtVisitor<()> for Interpreter {

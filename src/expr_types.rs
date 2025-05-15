@@ -16,6 +16,7 @@ pub enum Expr {
     Binary(BinaryExpr),
     Variable(VariableExpr),
     Assign(AssignExpr),
+    Logical(LogicalExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -91,6 +92,8 @@ pub trait ExprVisitor<T> {
     ///
     /// A `Result` containing the visitor's result or a `RuntimeError`.
     fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<T, RuntimeError>;
+
+    fn visit_logical_expr(&mut self, expr: &mut LogicalExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -118,6 +121,7 @@ impl Expr {
             Expr::Binary(expr) => visitor.visit_binary_expr(expr),
             Expr::Variable(expr) => visitor.visit_variable_expr(expr),
             Expr::Assign(expr) => visitor.visit_assign_expr(expr),
+            Expr::Logical(expr) => visitor.visit_logical_expr(expr),
         }
     }
 }
@@ -166,9 +170,15 @@ pub struct VariableExpr {
     pub name: Token,
 }
 
-/// Wrapper around the variable name token
 #[derive(Debug, Clone)]
 pub struct AssignExpr {
     pub name: Token,
     pub value: Box<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LogicalExpr {
+    pub left: Box<Expr>,
+    pub operator: Token,
+    pub right: Box<Expr>,
 }
