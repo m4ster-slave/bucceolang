@@ -494,6 +494,7 @@ fn declaration(parser: &mut Parser) -> Result<Stmt, ParseError> {
 fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
     match parser.peek().token_type() {
         TokenType::Print => print_statement(parser),
+        TokenType::LeftBrace => block_statement(parser),
         _ => expression_statement(parser),
     }
 }
@@ -540,6 +541,25 @@ fn print_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
     }
 
     Ok(Stmt::Print(val))
+}
+
+fn block_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    // advance past the opening brace
+    parser.advance();
+
+    let mut statements = Vec::new();
+
+    while !parser.check(&TokenType::RightBrace) && !parser.is_at_end() {
+        statements.push(declaration(parser)?);
+    }
+
+    if parser.check(&TokenType::RightBrace) {
+        parser.advance();
+
+        Ok(Stmt::Block(statements))
+    } else {
+        Err(error(parser.peek(), "Expect '}' after block.".to_string()))
+    }
 }
 
 /// Evaluates the expression and returns it as a 'Stmt::Expression'

@@ -13,6 +13,7 @@ pub enum Stmt {
     /// features are being implemented)
     Print(Expr),
     Var(VarStmt),
+    Block(Vec<Stmt>),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -27,6 +28,7 @@ pub trait StmtVisitor<T> {
     fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<T, RuntimeError>;
     // need to borrow here as mutable because we have modifiy the environment
     fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<T, RuntimeError>;
+    fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -35,6 +37,7 @@ impl Stmt {
             Stmt::Expression(expr) => visitor.visit_expr_stmt(expr),
             Stmt::Print(print_stmt) => visitor.visit_print_stmt(print_stmt),
             Stmt::Var(var_stmt) => visitor.visit_var_stmt(var_stmt),
+            Stmt::Block(block_stmt) => visitor.visit_block_stmt(block_stmt),
         }
     }
 }

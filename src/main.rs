@@ -135,6 +135,7 @@ fn run(source: &str) -> ExitCode {
             return ExitCode::from(65);
         }
     };
+
     let mut interpreter = Interpreter::new();
     match interpreter.interprete(&mut stmts) {
         Ok(_) => ExitCode::SUCCESS,

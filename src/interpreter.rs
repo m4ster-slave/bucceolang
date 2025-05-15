@@ -6,13 +6,16 @@ use crate::stmt_types::StmtVisitor;
 use crate::stmt_types::*;
 use crate::token::TokenType;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 /// A struct responsible for interpreting a list of statements.
 ///
 /// It processes each statement and can potentially return a `RuntimeError`
 /// if an issue occurs during execution.
 #[derive(Debug)]
 pub struct Interpreter {
-    environment: Environment,
+    environment: Rc<RefCell<Environment>>,
 }
 
 impl ExprVisitor<Object> for Interpreter {
@@ -184,12 +187,14 @@ impl ExprVisitor<Object> for Interpreter {
     }
 
     fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Object, RuntimeError> {
-        self.environment.get(&expr.name).cloned()
+        self.environment.borrow().get(&expr.name)
     }
 
     fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<Object, RuntimeError> {
         let val = expr.value.accept(self)?;
-        self.environment.assign(expr.name.clone(), val.clone())?;
+        self.environment
+            .borrow_mut()
+            .assign(expr.name.clone(), val.clone())?;
         Ok(val)
     }
 }
@@ -212,7 +217,27 @@ impl StmtVisitor<()> for Interpreter {
             None => Object::Nil,
         };
 
-        self.environment.define(stmt.name.lexeme().to_string(), val)
+        self.environment
+            .borrow_mut()
+            .define(stmt.name.lexeme().to_string(), val)
+    }
+
+    fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<(), RuntimeError> {
+        let previous = Rc::clone(&self.environment);
+
+        // Create a new environment that encloses the current one
+        self.environment = Rc::new(RefCell::new(Environment::new_enclosed(Rc::clone(
+            &previous,
+        ))));
+
+        for s in stmt {
+            s.evaluate(self)?;
+        }
+
+        // Restore previous environment
+        self.environment = previous;
+
+        Ok(())
     }
 }
 
@@ -266,7 +291,7 @@ impl Interpreter {
 
     pub fn new() -> Interpreter {
         Interpreter {
-            environment: Environment::new(),
+            environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
 }
