@@ -1,4 +1,5 @@
 use crate::expr_types::*;
+use crate::object::Object;
 use crate::parser_error::{self, error, ParseError};
 use crate::stmt_types::{IfStmt, Stmt, VarStmt, WhileStmt};
 use crate::token::TokenType;
@@ -476,6 +477,13 @@ impl Parser {
             }
         }
     }
+
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<&Token, ParseError> {
+        if self.check(&token_type) {
+            return Ok(self.advance());
+        }
+        Err(error(self.peek(), message.to_string()))
+    }
 }
 
 /// Parses a list of tokens into an abstract syntax tree (AST).
@@ -531,8 +539,61 @@ fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
         TokenType::LeftBrace => block_statement(parser),
         TokenType::If => if_statment(parser),
         TokenType::While => while_statment(parser),
+        TokenType::For => for_statement(parser),
         _ => expression_statement(parser),
     }
+}
+
+fn for_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    parser.advance(); // Consume 'for'
+
+    parser.consume(TokenType::LeftParen, "Expect '(' after 'for'.")?;
+
+    let initializer = if parser.match_token(TokenType::Semicolon) {
+        None
+    } else if parser.check(&TokenType::VarKeyword) {
+        Some(variable_declaration(parser)?)
+    } else {
+        Some(expression_statement(parser)?)
+    };
+
+    let condition = if !parser.check(&TokenType::Semicolon) {
+        Some(parser.expression()?)
+    } else {
+        None
+    };
+    parser.consume(TokenType::Semicolon, "Expect ';' after loop condition.")?;
+
+    let increment = if !parser.check(&TokenType::RightParen) {
+        Some(parser.expression()?)
+    } else {
+        None
+    };
+    parser.consume(TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+    let mut body = statement(parser)?;
+
+    if let Some(inc) = increment {
+        body = Stmt::Block(vec![body, Stmt::Expression(inc)]);
+    }
+
+    body = Stmt::While(WhileStmt {
+        condition: condition.unwrap_or(Expr::Literal(LiteralExpr {
+            literal: Token::new(
+                TokenType::True,
+                "true",
+                Some(Object::Boolean(true)),
+                parser.peek().line(),
+            ),
+        })),
+        body: Box::new(body),
+    });
+
+    if let Some(init) = initializer {
+        body = Stmt::Block(vec![init, body]);
+    }
+
+    Ok(body)
 }
 
 fn while_statment(parser: &mut Parser) -> Result<Stmt, ParseError> {
