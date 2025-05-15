@@ -265,6 +265,14 @@ impl StmtVisitor<()> for Interpreter {
         }
         Ok(())
     }
+
+    fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<(), RuntimeError> {
+        while is_truthy(&stmt.condition.accept(self)?) {
+            stmt.body.evaluate(self)?;
+        }
+
+        Ok(())
+    }
 }
 
 /// Determines the truthiness of a runtime `Object`.

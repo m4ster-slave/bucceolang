@@ -15,6 +15,7 @@ pub enum Stmt {
     Var(VarStmt),
     Block(Vec<Stmt>),
     If(IfStmt),
+    While(WhileStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -31,6 +32,7 @@ pub trait StmtVisitor<T> {
     fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<T, RuntimeError>;
     fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<T, RuntimeError>;
     fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<T, RuntimeError>;
+    fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -41,6 +43,7 @@ impl Stmt {
             Stmt::Var(var_stmt) => visitor.visit_var_stmt(var_stmt),
             Stmt::Block(block_stmt) => visitor.visit_block_stmt(block_stmt),
             Stmt::If(if_stmt) => visitor.visit_if_stmt(if_stmt),
+            Stmt::While(while_stmt) => visitor.visit_while_stmt(while_stmt),
         }
     }
 }
@@ -56,4 +59,10 @@ pub struct IfStmt {
     pub condition: Expr,
     pub then_branch: Box<Stmt>,
     pub else_branch: Option<Box<Stmt>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct WhileStmt {
+    pub condition: Expr,
+    pub body: Box<Stmt>,
 }

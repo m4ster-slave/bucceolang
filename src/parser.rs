@@ -1,6 +1,6 @@
 use crate::expr_types::*;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::{IfStmt, Stmt, VarStmt};
+use crate::stmt_types::{IfStmt, Stmt, VarStmt, WhileStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -530,8 +530,29 @@ fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
         TokenType::Print => print_statement(parser),
         TokenType::LeftBrace => block_statement(parser),
         TokenType::If => if_statment(parser),
+        TokenType::While => while_statment(parser),
         _ => expression_statement(parser),
     }
+}
+
+fn while_statment(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    // step over the while
+    parser.advance();
+    if !parser.check(&TokenType::LeftParen) {
+        return Err(error(parser.peek(), "Expect '(' after while.".to_string()));
+    }
+    parser.advance();
+
+    let condition = parser.expression()?;
+
+    if !parser.check(&TokenType::RightParen) {
+        return Err(error(parser.peek(), "Expect ')' after while.".to_string()));
+    }
+    parser.advance();
+
+    let body = Box::new(statement(parser)?);
+
+    Ok(Stmt::While(WhileStmt { condition, body }))
 }
 
 fn variable_declaration(parser: &mut Parser) -> Result<Stmt, ParseError> {
@@ -614,14 +635,14 @@ fn if_statment(parser: &mut Parser) -> Result<Stmt, ParseError> {
     // step over the if
     parser.advance();
     if !parser.check(&TokenType::LeftParen) {
-        return Err(error(parser.peek(), "Expect '(' before if.".to_string()));
+        return Err(error(parser.peek(), "Expect '(' after if.".to_string()));
     }
     parser.advance();
 
     let condition = parser.expression()?;
 
     if !parser.check(&TokenType::RightParen) {
-        return Err(error(parser.peek(), "Expect ')' after 'if'.".to_string()));
+        return Err(error(parser.peek(), "Expect ')' after if.".to_string()));
     }
     parser.advance();
 
