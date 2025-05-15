@@ -1,6 +1,6 @@
 use crate::expr_types::*;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::{Stmt, VarStmt};
+use crate::stmt_types::{IfStmt, Stmt, VarStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -495,6 +495,7 @@ fn statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
     match parser.peek().token_type() {
         TokenType::Print => print_statement(parser),
         TokenType::LeftBrace => block_statement(parser),
+        TokenType::If => if_statment(parser),
         _ => expression_statement(parser),
     }
 }
@@ -573,6 +574,36 @@ fn expression_statement(parser: &mut Parser) -> Result<Stmt, ParseError> {
     }
 
     Ok(Stmt::Expression(val))
+}
+
+fn if_statment(parser: &mut Parser) -> Result<Stmt, ParseError> {
+    // step over the if
+    parser.advance();
+    if !parser.check(&TokenType::LeftParen) {
+        return Err(error(parser.peek(), "Expect '(' before if.".to_string()));
+    }
+    parser.advance();
+
+    let condition = parser.expression()?;
+
+    if !parser.check(&TokenType::RightParen) {
+        return Err(error(parser.peek(), "Expect ')' after 'if'.".to_string()));
+    }
+    parser.advance();
+
+    let then_branch = Box::new(statement(parser)?);
+    let else_branch = if parser.check(&TokenType::Else) {
+        parser.advance();
+        Some(Box::new(statement(parser)?))
+    } else {
+        None
+    };
+
+    Ok(Stmt::If(IfStmt {
+        condition,
+        then_branch,
+        else_branch,
+    }))
 }
 
 #[cfg(test)]

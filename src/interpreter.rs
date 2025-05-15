@@ -239,6 +239,16 @@ impl StmtVisitor<()> for Interpreter {
 
         Ok(())
     }
+
+    ///If you compare this code to how the interpreter handles other syntax we’ve implemented, the part that makes control flow special is that Java if statement. Most other syntax trees always evaluate their subtrees. Here, we may not evaluate the then or else statement. If either of those has a side effect, the choice not to evaluate it becomes user visible.
+    fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<(), RuntimeError> {
+        if is_truthy(&stmt.condition.accept(self)?) {
+            stmt.then_branch.evaluate(self)?
+        } else if let Some(else_stmt) = &mut stmt.else_branch {
+            else_stmt.evaluate(self)?
+        }
+        Ok(())
+    }
 }
 
 /// Determines the truthiness of a runtime `Object`.

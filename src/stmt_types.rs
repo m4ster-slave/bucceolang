@@ -14,6 +14,7 @@ pub enum Stmt {
     Print(Expr),
     Var(VarStmt),
     Block(Vec<Stmt>),
+    If(IfStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -29,6 +30,7 @@ pub trait StmtVisitor<T> {
     // need to borrow here as mutable because we have modifiy the environment
     fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<T, RuntimeError>;
     fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<T, RuntimeError>;
+    fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -38,6 +40,7 @@ impl Stmt {
             Stmt::Print(print_stmt) => visitor.visit_print_stmt(print_stmt),
             Stmt::Var(var_stmt) => visitor.visit_var_stmt(var_stmt),
             Stmt::Block(block_stmt) => visitor.visit_block_stmt(block_stmt),
+            Stmt::If(if_stmt) => visitor.visit_if_stmt(if_stmt),
         }
     }
 }
@@ -46,4 +49,11 @@ impl Stmt {
 pub struct VarStmt {
     pub name: Token,
     pub initializer: Option<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct IfStmt {
+    pub condition: Expr,
+    pub then_branch: Box<Stmt>,
+    pub else_branch: Option<Box<Stmt>>,
 }
