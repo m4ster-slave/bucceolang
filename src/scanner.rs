@@ -208,7 +208,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                             out.push(Token::new(TokenType::False, "false", value, line_number))
                         }
                         "for" => out.push(Token::new(TokenType::For, "for", None, line_number)),
-                        "fun" => out.push(Token::new(TokenType::Fn, "fun", None, line_number)),
+                        "fn" => out.push(Token::new(TokenType::Fn, "fn", None, line_number)),
                         "if" => out.push(Token::new(TokenType::If, "if", None, line_number)),
                         "nil" => {
                             let value = Some(Object::Nil);
@@ -313,7 +313,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
             }
         }
     }
-    out.push(Token::new(TokenType::EOF, "", None, line_number));
+    out.push(Token::new(TokenType::Eof, "", None, line_number));
 
     Ok(out)
 }
@@ -456,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_keywords() {
-        let input = "else false for fun if nil print return super this true while class";
+        let input = "else false for fn if nil print return super this true while class";
         let tokens = tokenize(input).unwrap();
         assert_eq!(tokens.len(), 14); // +1 for EOF
         assert!(matches!(tokens[0].token_type(), TokenType::Else));
@@ -609,7 +609,7 @@ mod tests {
             iter.next().unwrap().token_type(),
             TokenType::RightBrace
         ));
-        assert!(matches!(iter.next().unwrap().token_type(), TokenType::EOF));
+        assert!(matches!(iter.next().unwrap().token_type(), TokenType::Eof));
 
         assert!(iter.next().is_none());
     }
@@ -690,7 +690,7 @@ mod tests {
         let input = "\"Test\"";
         let tokens = tokenize(input).unwrap();
         assert_eq!(tokens.len(), 2);
-        assert!(matches!(tokens[1].token_type(), TokenType::EOF));
+        assert!(matches!(tokens[1].token_type(), TokenType::Eof));
     }
 
     #[test]

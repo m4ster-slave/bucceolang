@@ -29,7 +29,7 @@ pub struct ParseError {
 pub fn error(token: &Token, message: String) -> ParseError {
     let (line, where_msg) = match token.token_type() {
         // Special handling for EOF token to indicate the error is at the end of the input.
-        TokenType::EOF => (token.line(), "at end".to_string()),
+        TokenType::Eof => (token.line(), "at end".to_string()),
         // For other tokens, the location is the token itself.
         _ => (token.line(), format!("at '{}'", token_to_string(token))),
     };

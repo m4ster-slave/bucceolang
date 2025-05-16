@@ -13,6 +13,7 @@ pub enum Stmt {
     /// features are being implemented)
     Print(Expr),
     Var(VarStmt),
+    /// Respresents a block as a list of other statements
     Block(Vec<Stmt>),
     If(IfStmt),
     While(WhileStmt),
@@ -28,7 +29,6 @@ pub enum Stmt {
 pub trait StmtVisitor<T> {
     fn visit_expr_stmt(&mut self, stmt: &mut Expr) -> Result<T, RuntimeError>;
     fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<T, RuntimeError>;
-    // need to borrow here as mutable because we have modifiy the environment
     fn visit_var_stmt(&mut self, stmt: &mut VarStmt) -> Result<T, RuntimeError>;
     fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<T, RuntimeError>;
     fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<T, RuntimeError>;
@@ -36,6 +36,7 @@ pub trait StmtVisitor<T> {
 }
 
 impl Stmt {
+    /// function to evaluate each kind of 'Stmt' and return the result as 'T'
     pub fn evaluate<T>(&mut self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, RuntimeError> {
         match self {
             Stmt::Expression(expr) => visitor.visit_expr_stmt(expr),
@@ -50,19 +51,26 @@ impl Stmt {
 
 #[derive(Debug, Clone)]
 pub struct VarStmt {
+    /// The token representing the variable's name.
     pub name: Token,
+    /// An optional expression that provides the initial value for the variable.
     pub initializer: Option<Expr>,
 }
 
 #[derive(Debug, Clone)]
 pub struct IfStmt {
+    /// The expression that determines whether the `then_branch` or `else_branch` is executed.
     pub condition: Expr,
+    /// The statement to be executed if the `condition` is true.
     pub then_branch: Box<Stmt>,
+    /// An optional statement to be executed if the `condition` is false.
     pub else_branch: Option<Box<Stmt>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct WhileStmt {
+    /// The expression that determines whether the loop continues to execute.
     pub condition: Expr,
+    /// The statement to be repeatedly executed as long as the `condition` is true.
     pub body: Box<Stmt>,
 }

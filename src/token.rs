@@ -40,7 +40,7 @@ pub enum TokenType {
     Else,
     False,
     For,
-    Fn, // Represents the 'fun' keyword
+    Fn,
     If,
     Nil,
     Print,
@@ -56,7 +56,7 @@ pub enum TokenType {
     Var, // Represents a variable or identifier name
 
     // End of file
-    EOF,
+    Eof,
 }
 
 /// Represents a single token produced by the scanner.

@@ -20,9 +20,9 @@ use std::fs;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-/** # My Interpreter
+/** # Bucceolang
 
-This crate implements a simple tree-walking interpreter for a small, dynamically-typed language.
+This project implements a simple tree-walking interpreter for a small, dynamically-typed language.
 
 The interpreter processes source code in several stages:
 
@@ -41,54 +41,8 @@ The language supported by this interpreter includes:
 *   Variable declarations (`var`)
 *   Printing to the console (`print`)
 *   Control flow: `if` statements, `while` loops, `for` loops
-*   Functions (`fun`)
+*   Functions (`fn`)
 *   Classes (`class`)
-
-## Modules
-
-The crate is organized into the following modules:
-
-*   `scanner`: Handles the lexical analysis (scanning) of the input.
-*   `token`: Defines the `Token` struct and `TokenType` enum used by the scanner and parser.
-*   `runtime_error`: Defines the `RuntimeError` enum for reporting errors during interpretation.
-*   `parser`: Implements the recursive descent parser to build the AST.
-*   `ast`: Defines the Abstract Syntax Tree structure (`Expr`, `Stmt`, visitor patterns).
-*   `object`: Defines the `Object` enum representing runtime values.
-*   `interpreter`: Implements the tree-walking interpreter to execute the AST.
-*   `environment`: Manages the runtime environment (variable scope).
-
-## Getting Started
-
-To use this interpreter, you would typically:
-
-1.  Instantiate a `Scanner` with your source code string.
-2.  Call the scanner's method to produce a list of `Token`s.
-3.  Handle any scanning errors.
-4.  Instantiate a `Parser` with the list of tokens.
-5.  Call the parser's method to produce an AST (e.g., a list of statements).
-6.  Handle any parsing errors.
-7.  Instantiate an `Interpreter`.
-8.  Call the interpreter's method to execute the AST.
-9.  Handle any runtime errors.
-
-## Error Handling
-
-The interpreter defines specific error types for scanning (`ScannerError`),
-parsing (`ParseError`), and runtime execution (`RuntimeError`) to provide
-detailed information about where and why an error occurred.
-
-## Future Improvements
-
-Possible areas for future development include:
-
-*   Adding more language features (arrays, dictionaries, etc.)
-*   Implementing a just-in-time (JIT) compiler for performance.
-*   Adding a standard library of built-in functions.
-*   Optimizing the interpreter's performance.
-
-This documentation provides an overview of the interpreter's structure and
-functionality. Refer to the documentation for individual modules and types
-for more detailed information.
 */
 
 fn main() -> ExitCode {
