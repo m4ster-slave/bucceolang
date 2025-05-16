@@ -98,7 +98,7 @@ impl Parser {
             }
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     /// Parses an equality expression (`==`, `!=`).
@@ -115,10 +115,9 @@ impl Parser {
         let mut expr = self.comparison()?;
         while self.match_tokens(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous().clone();
-            let right = self.comparison().map_err(|e| {
+            let right = self.comparison().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
@@ -147,10 +146,9 @@ impl Parser {
             TokenType::LessEqual,
         ]) {
             let operator = self.previous().clone();
-            let right = self.term().map_err(|e| {
+            let right = self.term().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
@@ -174,10 +172,9 @@ impl Parser {
         let mut expr = self.factor()?;
         while self.match_tokens(&[TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous().clone();
-            let right = self.factor().map_err(|e| {
+            let right = self.factor().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
@@ -201,10 +198,9 @@ impl Parser {
         let mut expr = self.unary()?;
         while self.match_tokens(&[TokenType::Slash, TokenType::Asterisk]) {
             let operator = self.previous().clone();
-            let right = self.unary().map_err(|e| {
+            let right = self.unary().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
@@ -228,10 +224,9 @@ impl Parser {
     fn unary(&mut self) -> Result<Expr, ParseError> {
         if self.match_tokens(&[TokenType::Bang, TokenType::Minus]) {
             let prefix = self.previous().clone();
-            let operator = self.unary().map_err(|e| {
+            let operator = self.unary().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             return Ok(Expr::Unary(UnaryExpr {
                 prefix,
@@ -276,10 +271,9 @@ impl Parser {
         }
         if self.match_token(TokenType::LeftParen) {
             let paren_open = self.previous().clone();
-            let expr = self.expression().map_err(|e| {
+            let expr = self.expression().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
-                e
             })?;
             if !self.check(&TokenType::RightParen) {
                 let error =
@@ -486,17 +480,12 @@ impl Parser {
     fn if_statment(&mut self) -> Result<Stmt, ParseError> {
         // step over the if
         self.advance();
-        if !self.check(&TokenType::LeftParen) {
-            return Err(error(self.peek(), "Expect '(' after if.".to_string()));
-        }
-        self.advance();
+
+        self.consume(TokenType::LeftParen, "Expect '(' after if.")?;
 
         let condition = self.expression()?;
 
-        if !self.check(&TokenType::RightParen) {
-            return Err(error(self.peek(), "Expect ')' after if.".to_string()));
-        }
-        self.advance();
+        self.consume(TokenType::RightParen, "Expect ')' after if.")?;
 
         let then_branch = Box::new(self.statement()?);
         let else_branch = if self.check(&TokenType::Else) {
@@ -545,9 +534,8 @@ impl Parser {
             TokenType::VarKeyword => self.variable_declaration(),
             _ => self.statement(),
         }
-        .map_err(|e| {
+        .inspect_err(|_| {
             self.synchronize();
-            e
         })
     }
 
@@ -624,17 +612,12 @@ impl Parser {
     fn while_statment(&mut self) -> Result<Stmt, ParseError> {
         // step over the while
         self.advance();
-        if !self.check(&TokenType::LeftParen) {
-            return Err(error(self.peek(), "Expect '(' after while.".to_string()));
-        }
-        self.advance();
+
+        self.consume(TokenType::LeftParen, "Expect '(' after while.")?;
 
         let condition = self.expression()?;
 
-        if !self.check(&TokenType::RightParen) {
-            return Err(error(self.peek(), "Expect ')' after while.".to_string()));
-        }
-        self.advance();
+        self.consume(TokenType::RightParen, "Expect ')' after while.")?;
 
         let body = Box::new(self.statement()?);
 
@@ -675,12 +658,8 @@ impl Parser {
         self.advance();
 
         let val: Expr = self.expression()?;
-        if !self.match_token(TokenType::Semicolon) {
-            return Err(error(
-                self.peek(),
-                "Expect ';' after expression.".to_string(),
-            ));
-        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
 
         Ok(Stmt::Print(val))
     }
@@ -697,24 +676,15 @@ impl Parser {
             statements.push(self.declaration()?);
         }
 
-        if self.check(&TokenType::RightBrace) {
-            self.advance();
-
-            Ok(Stmt::Block(statements))
-        } else {
-            Err(error(self.peek(), "Expect '}' after block.".to_string()))
-        }
+        self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
+        Ok(Stmt::Block(statements))
     }
 
     /// Evaluates the expression and returns it as a 'Stmt::Expression'
     fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let val: Expr = self.expression()?;
-        if !self.match_token(TokenType::Semicolon) {
-            return Err(error(
-                self.peek(),
-                "Expect ';' after expression.".to_string(),
-            ));
-        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
 
         Ok(Stmt::Expression(val))
     }
@@ -755,8 +725,4 @@ pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::object::Object;
-    use crate::token::{Token, TokenType};
-}
+mod tests {}
