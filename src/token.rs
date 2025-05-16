@@ -1,7 +1,7 @@
 use std::fmt;
 
 /// Represents the different types of tokens that can be produced by the scanner.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens
     LeftParen,  // (

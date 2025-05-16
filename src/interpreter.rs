@@ -201,9 +201,7 @@ impl ExprVisitor<Object> for Interpreter {
     fn visit_logical_expr(&mut self, expr: &mut LogicalExpr) -> Result<Object, RuntimeError> {
         let left = expr.left.accept(self)?;
 
-        if std::mem::discriminant(expr.operator.token_type())
-            == std::mem::discriminant(&TokenType::Or)
-        {
+        if *expr.operator.token_type() == TokenType::Or {
             if is_truthy(&left) {
                 return Ok(left);
             }

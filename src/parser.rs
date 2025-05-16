@@ -358,9 +358,7 @@ impl Parser {
             return false;
         }
 
-        // Compare the discriminants of the token types to ignore associated data
-        // for types like Number and String.
-        std::mem::discriminant(self.peek().token_type()) == std::mem::discriminant(token_type)
+        self.peek().token_type() == token_type
     }
 
     /// Consumes the current token and advances the parser to the next token.
