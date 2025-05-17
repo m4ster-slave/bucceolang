@@ -17,6 +17,7 @@ pub enum Stmt {
     Block(Vec<Stmt>),
     If(IfStmt),
     While(WhileStmt),
+    Function(FunctionStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -33,6 +34,7 @@ pub trait StmtVisitor<T> {
     fn visit_block_stmt(&mut self, stmt: &mut Vec<Stmt>) -> Result<T, RuntimeError>;
     fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<T, RuntimeError>;
     fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<T, RuntimeError>;
+    fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -45,6 +47,7 @@ impl Stmt {
             Stmt::Block(block_stmt) => visitor.visit_block_stmt(block_stmt),
             Stmt::If(if_stmt) => visitor.visit_if_stmt(if_stmt),
             Stmt::While(while_stmt) => visitor.visit_while_stmt(while_stmt),
+            Stmt::Function(function_stmt) => visitor.visit_function_stmt(function_stmt),
         }
     }
 }
@@ -73,4 +76,11 @@ pub struct WhileStmt {
     pub condition: Expr,
     /// The statement to be repeatedly executed as long as the `condition` is true.
     pub body: Box<Stmt>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionStmt {
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Vec<Stmt>,
 }

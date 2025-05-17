@@ -1,7 +1,7 @@
 use crate::expr_types::*;
 use crate::object::Object;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::{IfStmt, Stmt, VarStmt, WhileStmt};
+use crate::stmt_types::{FunctionStmt, IfStmt, Stmt, VarStmt, WhileStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -233,7 +233,7 @@ impl Parser {
                 operator: Box::new(operator),
             }));
         }
-        self.primary()
+        self.call()
     }
 
     /// Parses the highest precedence expressions: literals, grouping, and variables.
@@ -270,7 +270,7 @@ impl Parser {
             }));
         }
         if self.match_token(TokenType::LeftParen) {
-            let paren_open = self.previous().clone();
+            let _paren_open = self.previous().clone();
             let expr = self.expression().inspect_err(|_| {
                 self.had_error = true;
                 self.synchronize();
@@ -283,11 +283,11 @@ impl Parser {
                 return Err(error);
             }
             self.advance();
-            let paren_close = self.previous().clone();
+            let _paren_close = self.previous().clone();
             return Ok(Expr::Grouping(GroupingExpr {
-                paren_open,
+                _paren_open,
                 expr: Box::new(expr),
-                paren_close,
+                _paren_close,
             }));
         }
         // If none of the primary expression types match, it's a parsing error.
@@ -530,11 +530,73 @@ impl Parser {
     fn declaration(&mut self) -> Result<Stmt, ParseError> {
         match self.peek().token_type() {
             TokenType::VarKeyword => self.variable_declaration(),
+            TokenType::Fn => self.function("function"),
             _ => self.statement(),
         }
         .inspect_err(|_| {
             self.synchronize();
         })
+    }
+
+    fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        self.advance();
+        let name = self.consume(TokenType::Var, &format!("Expect {kind} name."))?;
+        // TODO FIXME PLEASE WTF IS THIS LKDFJSKLFSKL
+        // sorry for whoever has to see this
+        let name_cloned = name.clone();
+
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expect '(' after {kind} name."),
+        )?;
+
+        let mut params: Vec<Token> = Vec::new();
+
+        if !self.check(&TokenType::RightParen) {
+            params.push(
+                self.consume(TokenType::Var, "Expect parameter name.")?
+                    .clone(),
+            );
+            while self.match_token(TokenType::Comma) {
+                if params.len() >= 255 {
+                    error(self.peek(), "Can't have more than 255 arguments.".into());
+                }
+
+                params.push(
+                    self.consume(TokenType::Var, "Expect parameter name.")?
+                        .clone(),
+                );
+            }
+        }
+
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
+
+        // we cant consume the token here because block_statement() consumes the opening brace in
+        // the bginning
+        if !self.check(&TokenType::LeftBrace) {
+            return Err(error(
+                self.peek(),
+                format!("Expect '{{' before {kind} body."),
+            ));
+        }
+
+        let body = self.block_statement()?;
+
+        let body_stmts = match body {
+            Stmt::Block(stmts) => stmts,
+            _ => {
+                return Err(error(
+                    &name_cloned,
+                    "Expected block statement as function body".to_string(),
+                ))
+            }
+        };
+
+        Ok(Stmt::Function(FunctionStmt {
+            name: name_cloned,
+            params,
+            body: body_stmts,
+        }))
     }
 
     /// Parses a `for` statement.
@@ -685,6 +747,64 @@ impl Parser {
         self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
 
         Ok(Stmt::Expression(val))
+    }
+
+    /// Parses a function call expression.
+    ///
+    /// This function handles the parsing of a primary expression followed by zero or more
+    /// function calls. It iteratively checks for left parentheses `(` to identify call
+    /// expressions and delegates the parsing of the arguments to the `finish_call`
+    /// function.
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if self.match_token(TokenType::LeftParen) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    /// Finishes parsing a function call expression.
+    ///
+    /// This function is called after the opening parenthesis `(` of a function call
+    /// has been matched. It parses the arguments of the call, which are
+    /// comma-separated expressions, and consumes the closing parenthesis `)`.
+    ///
+    /// We check for that case first by seeing if the next token is ). If it is, we don’t try to parse any arguments
+    ///
+    /// # Arguments
+    ///
+    /// * `callee`: The expression that is being called.
+    ///
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut arguments: Vec<Expr> = Vec::new();
+
+        if !self.check(&TokenType::RightParen) {
+            arguments.push(self.expression()?);
+            while self.match_token(TokenType::Comma) {
+                // technically we could make this as long as possible but most language specs dont
+                // and its gonna make it easier to implement a bytcode VM or make a compiler out
+                // of this...
+                if arguments.len() >= 255 {
+                    error(self.peek(), "Can't have more than 255 arguments.".into());
+                }
+
+                arguments.push(self.expression()?);
+            }
+        }
+
+        Ok(Expr::Call(CallExpr {
+            callee: Box::new(callee),
+            paren: self
+                .consume(TokenType::RightParen, "Expect ')' after arguments.")?
+                .clone(),
+            arguments,
+        }))
     }
 }
 

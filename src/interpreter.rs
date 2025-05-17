@@ -1,5 +1,7 @@
 use crate::environment::Environment;
 use crate::expr_types::*;
+use crate::function::Function;
+use crate::native_functions::ClockFn;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::stmt_types::StmtVisitor;
@@ -15,7 +17,10 @@ use std::rc::Rc;
 /// if an issue occurs during execution.
 #[derive(Debug)]
 pub struct Interpreter {
-    environment: Rc<RefCell<Environment>>,
+    /// holds any additional environments by the user
+    pub environment: Rc<RefCell<Environment>>,
+    /// holds the outermost global environment
+    pub globals: Rc<RefCell<Environment>>,
 }
 
 impl ExprVisitor<Object> for Interpreter {
@@ -211,6 +216,36 @@ impl ExprVisitor<Object> for Interpreter {
 
         expr.right.accept(self)
     }
+
+    fn visit_call_expr(&mut self, expr: &mut CallExpr) -> Result<Object, RuntimeError> {
+        let callee = expr.callee.accept(self)?;
+
+        let mut arguments: Vec<Object> = Vec::new();
+        for arg in &mut expr.arguments {
+            arguments.push(arg.accept(self)?);
+        }
+
+        match callee {
+            Object::Callable(func) => {
+                if arguments.len() != func.borrow().arity() {
+                    Err(RuntimeError::Other(
+                        expr.paren.line(),
+                        format!(
+                            "Expected {} arguments but got {}.",
+                            func.borrow().arity(),
+                            arguments.len()
+                        ),
+                    ))
+                } else {
+                    Ok(func.borrow_mut().call(self, arguments)?)
+                }
+            }
+            _ => Err(RuntimeError::TypeError(
+                expr.paren.line(),
+                "Can only call functions and classes.".to_string(),
+            )),
+        }
+    }
 }
 
 impl StmtVisitor<()> for Interpreter {
@@ -271,6 +306,19 @@ impl StmtVisitor<()> for Interpreter {
 
         Ok(())
     }
+
+    /// Register a new function in the environment for executing it later
+    fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<(), RuntimeError> {
+        let function = Function {
+            declaration: stmt.clone(),
+        };
+
+        self.environment.borrow_mut().define(
+            stmt.name.lexeme().to_string(),
+            Object::Callable(Rc::new(RefCell::new(function))),
+        )?;
+        Ok(())
+    }
 }
 
 impl Interpreter {
@@ -300,9 +348,21 @@ impl Interpreter {
         Ok(())
     }
 
+    /// Create a new 'Interpreter' instance
     pub fn new() -> Interpreter {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+
+        globals
+            .borrow_mut()
+            .define(
+                "clock".into(),
+                Object::Callable(Rc::new(RefCell::new(ClockFn))),
+            )
+            .expect("Failed to define native function 'clock'");
+
         Interpreter {
-            environment: Rc::new(RefCell::new(Environment::new())),
+            environment: globals.to_owned(),
+            globals,
         }
     }
 }
@@ -436,9 +496,9 @@ mod tests {
         let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
         let right_paren = Token::new(TokenType::RightParen, ")", None, 1);
         let mut expr = Expr::Grouping(GroupingExpr {
-            paren_open: left_paren,
+            _paren_open: left_paren,
             expr: Box::new(number_expr),
-            paren_close: right_paren,
+            _paren_close: right_paren,
         });
 
         let result = expr.accept(&mut interpreter);
@@ -721,9 +781,9 @@ mod tests {
         let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
         let right_paren = Token::new(TokenType::RightParen, "(", None, 1);
         let grouping = Expr::Grouping(GroupingExpr {
-            paren_open: left_paren,
+            _paren_open: left_paren,
             expr: Box::new(addition),
-            paren_close: right_paren,
+            _paren_close: right_paren,
         });
 
         let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);

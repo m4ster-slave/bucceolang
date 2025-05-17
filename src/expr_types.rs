@@ -16,7 +16,9 @@ pub enum Expr {
     Binary(BinaryExpr),
     Variable(VariableExpr),
     Assign(AssignExpr),
+    /// Represents a logical operation (and, or).
     Logical(LogicalExpr),
+    Call(CallExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -94,6 +96,7 @@ pub trait ExprVisitor<T> {
     fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<T, RuntimeError>;
 
     fn visit_logical_expr(&mut self, expr: &mut LogicalExpr) -> Result<T, RuntimeError>;
+    fn visit_call_expr(&mut self, expr: &mut CallExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -122,6 +125,7 @@ impl Expr {
             Expr::Variable(expr) => visitor.visit_variable_expr(expr),
             Expr::Assign(expr) => visitor.visit_assign_expr(expr),
             Expr::Logical(expr) => visitor.visit_logical_expr(expr),
+            Expr::Call(expr) => visitor.visit_call_expr(expr),
         }
     }
 }
@@ -137,11 +141,11 @@ pub struct LiteralExpr {
 #[derive(Debug, Clone)]
 pub struct GroupingExpr {
     /// The left parenthesis token.
-    pub paren_open: Token,
+    pub _paren_open: Token,
     /// The expression contained within the parentheses.
     pub expr: Box<Expr>,
     /// The right parenthesis token.
-    pub paren_close: Token,
+    pub _paren_close: Token,
 }
 
 /// Represents a unary expression (e.g., `-5`, `!is_true`) in the AST.
@@ -181,4 +185,11 @@ pub struct LogicalExpr {
     pub left: Box<Expr>,
     pub operator: Token,
     pub right: Box<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CallExpr {
+    pub callee: Box<Expr>,
+    pub paren: Token,
+    pub arguments: Vec<Expr>,
 }

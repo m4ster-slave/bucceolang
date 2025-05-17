@@ -1,6 +1,9 @@
+mod callable;
 mod environment;
 mod expr_types;
+mod function;
 mod interpreter;
+mod native_functions;
 mod object;
 mod parser;
 mod parser_error;
@@ -85,7 +88,7 @@ fn run(source: &str) -> ExitCode {
         Ok(e) => e,
         Err(errors) => {
             // TODO: think about the parser errors...
-            for error in errors {}
+            for _error in errors {}
             return ExitCode::from(65);
         }
     };
