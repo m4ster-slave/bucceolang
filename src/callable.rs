@@ -1,5 +1,5 @@
 use crate::function::Function;
-use crate::native_functions::ClockFn;
+use crate::native_functions::{ClockFn, ReadFn};
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::Interpreter;
@@ -11,6 +11,7 @@ use std::rc::Rc;
 pub enum CallableObject {
     Function(Rc<RefCell<Function>>),
     ClockFn(ClockFn),
+    ReadFn(ReadFn),
 }
 
 impl CallableObject {
@@ -18,6 +19,7 @@ impl CallableObject {
         match self {
             CallableObject::Function(f) => f.borrow().arity(),
             CallableObject::ClockFn(nf) => nf.arity(),
+            CallableObject::ReadFn(nf) => nf.arity(),
         }
     }
 
@@ -32,6 +34,7 @@ impl CallableObject {
                 func_clone.call(interp, args)
             }
             CallableObject::ClockFn(nf) => nf.call(interp, args),
+            CallableObject::ReadFn(nf) => nf.call(interp, args),
         }
     }
 }
