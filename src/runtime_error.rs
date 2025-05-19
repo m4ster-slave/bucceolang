@@ -29,13 +29,27 @@ pub enum RuntimeError {
 impl std::fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            RuntimeError::TypeError(line, msg) => write!(f, "[line: {}] Type Error: {}", line, msg),
-            RuntimeError::DivisionByZero(line) => write!(f, "[line: {}] Division by zero", line),
-            RuntimeError::UndefinedVariable(line, name) => {
-                write!(f, "[line: {}] Undefined variable: {}", line, name)
+            RuntimeError::TypeError(line, msg) => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Type Error: {}\x1b[0m",
+                line, msg
+            ),
+            RuntimeError::DivisionByZero(line) => {
+                write!(f, "\x1b[31;49;1m[line: {}] Division by zero\x1b[0m", line)
             }
-            RuntimeError::Other(line, msg) => write!(f, "[line: {}] Runtime Error: {}", line, msg),
-            _ => write!(f, "should be a error"),
+            RuntimeError::UndefinedVariable(line, name) => {
+                write!(
+                    f,
+                    "\x1b[31;49;1m[line: {}] Undefined variable: {}\x1b[0m",
+                    line, name
+                )
+            }
+            RuntimeError::Other(line, msg) => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Runtime Error: {}\x1b[0m",
+                line, msg
+            ),
+            _ => write!(f, "\x1b[31;49;1mshould be a error\x1b[0m"),
         }
     }
 }

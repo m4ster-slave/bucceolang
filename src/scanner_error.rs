@@ -16,10 +16,18 @@ impl std::fmt::Display for ScannerError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ScannerError::InvalidVariableName(line, msg) => {
-                write!(f, "[line: {}] Error: Invalid variable name: {}", line, msg)
+                write!(
+                    f,
+                    "\x1b[31;49;1m[line: {}] Error: Invalid variable name: {}\x1b[0m",
+                    line, msg
+                )
             }
             ScannerError::InvalidSyntax(line, msg) => {
-                write!(f, "[line: {}] Invalid Syntax: {}", line, msg)
+                write!(
+                    f,
+                    "\x1b[31;49;1m[line: {}] Invalid Syntax: {}\x1b[0m",
+                    line, msg
+                )
             }
         }
     }

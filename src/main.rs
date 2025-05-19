@@ -56,14 +56,17 @@ fn main() -> ExitCode {
         let file_path = &args[1];
 
         if !file_path.ends_with(".bl") {
-            eprintln!("Error: File must have .bl extension");
+            eprintln!("\x1b[31;49;1mError: File must have .bl extension\x1b[0m");
             return ExitCode::from(64);
         }
 
         let source = match fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
-                eprintln!("Error reading file '{}': {}", file_path, e);
+                eprintln!(
+                    "\x1b[31;49;1mError reading file '{}': {}\x1b[0m",
+                    file_path, e
+                );
                 return ExitCode::from(66);
             }
         };
@@ -83,12 +86,11 @@ fn run(source: &str) -> ExitCode {
             return ExitCode::from(65);
         }
     };
-    println!("Tokens: {:?}", tokens);
     let mut stmts = match parse(tokens) {
         Ok(e) => e,
-        Err(errors) => {
+        Err(_errors) => {
             // TODO: think about the parser errors...
-            for _error in errors {}
+            // for _error in errors {}
             return ExitCode::from(65);
         }
     };
@@ -97,7 +99,7 @@ fn run(source: &str) -> ExitCode {
     match interpreter.interprete(&mut stmts) {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
-            eprintln!("Runtime Error: {}", err);
+            eprintln!("\x1b[31;49;1mRuntime Error: {}\x1b[0m", err);
             ExitCode::from(70)
         }
     }

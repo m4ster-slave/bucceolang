@@ -42,7 +42,7 @@ pub fn error(token: &Token, message: String) -> ParseError {
 
     // Report the error to the standard error stream.
     eprintln!(
-        "[line {}] Error {}: {}",
+        "\x1b[31;49;1m[line {}] Error {}: {}\x1b[0m",
         error.line, error.location, error.message
     );
 
