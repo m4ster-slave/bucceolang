@@ -1,4 +1,3 @@
-use crate::interpreter;
 use crate::{interpreter::Interpreter, object::Object, runtime_error::RuntimeError};
 use std::io;
 use std::io::prelude::*;

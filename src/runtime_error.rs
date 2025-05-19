@@ -6,21 +6,21 @@ pub enum RuntimeError {
     /// Indicates a type mismatch error.
     /// The first element is the line number where the error occurred.
     /// The second element is a descriptive error message.
-    TypeError(u64, String),
+    TypeError(usize, String),
 
     /// Indicates an attempt to divide by zero.
     /// The element is the line number where the division by zero occurred.
-    DivisionByZero(u64),
+    DivisionByZero(usize),
 
     /// Indicates that a variable was accessed before it was defined.
     /// The first element is the line number where the undefined variable was used.
     /// The second element is the name of the undefined variable.
-    UndefinedVariable(u64, String),
+    UndefinedVariable(usize, String),
 
     /// Represents any other runtime error not covered by specific variants.
     /// The first element is the line number where the error occurred.
     /// The second element is a descriptive error message.
-    Other(u64, String),
+    Other(usize, String),
     /// special error type thats used to propagate the the return value of functions thru the
     /// callstack, it gets caught by the 'Call()' function
     Return(Object),

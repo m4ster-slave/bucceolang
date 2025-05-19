@@ -414,7 +414,7 @@ mod tests {
     use crate::stmt_types::*;
     use crate::token::{Token, TokenType};
 
-    fn create_number_token(value: f64, line: u64) -> Token {
+    fn create_number_token(value: f64, line: usize) -> Token {
         Token::new(
             TokenType::Number,
             &value.to_string(),
@@ -423,7 +423,7 @@ mod tests {
         )
     }
 
-    fn create_string_token(value: String, line: u64) -> Token {
+    fn create_string_token(value: String, line: usize) -> Token {
         Token::new(
             TokenType::String,
             &value.clone(),

@@ -4,7 +4,7 @@ use crate::{token::TokenType, Token};
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The line number in the source code where the error occurred.
-    pub line: u64,
+    pub line: usize,
     /// A description of the location within the line where the error was detected.
     pub location: String,
     /// A detailed message describing the parsing error.

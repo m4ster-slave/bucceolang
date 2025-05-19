@@ -4,12 +4,12 @@ pub enum ScannerError {
     /// Indicates an invalid variable name was encountered.
     /// The first element is the line number where the error occurred.
     /// The second element is a descriptive error message.
-    InvalidVariableName(u64, String),
+    InvalidVariableName(usize, String),
 
     /// Indicates a general syntax error was encountered.
     /// The first element is the line number where the error occurred.
     /// The second element is a descriptive error message.
-    InvalidSyntax(u64, String),
+    InvalidSyntax(usize, String),
 }
 
 impl std::fmt::Display for ScannerError {

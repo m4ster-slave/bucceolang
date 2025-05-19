@@ -30,7 +30,7 @@ use crate::{
 /// - The `var` keyword is not followed by a variable name.
 pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
     let mut out: Vec<Token> = Vec::new();
-    let mut line_number: u64 = 1;
+    let mut line_number: usize = 1;
 
     let mut chars = input.chars();
     while let Some(char) = chars.next() {

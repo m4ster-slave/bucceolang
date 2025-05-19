@@ -70,7 +70,7 @@ pub struct Token {
     /// This is `None` for other token types.
     literal: Option<crate::object::Object>,
     /// The line number in the input where this token was found.
-    line: u64,
+    line: usize,
 }
 
 impl Token {
@@ -86,7 +86,7 @@ impl Token {
         token_type: TokenType,
         lexeme: &str,
         literal: Option<crate::object::Object>,
-        line: u64,
+        line: usize,
     ) -> Token {
         Token {
             token_type,
@@ -102,7 +102,7 @@ impl Token {
     }
 
     /// Returns the line number where the token was found.
-    pub fn line(&self) -> u64 {
+    pub fn line(&self) -> usize {
         self.line
     }
 
