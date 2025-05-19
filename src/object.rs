@@ -1,6 +1,4 @@
-use crate::callable::Callable;
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::callable::CallableObject;
 /// Represents the different types of values that can be produced and manipulated by the interpreter.
 ///
 /// These are the runtime values of the language, such as the absence of a value (`Nil`),
@@ -16,8 +14,8 @@ pub enum Object {
     /// Represents a text string.
     String(String),
     /// Closure or function
-    Callable(Rc<RefCell<dyn Callable>>), // hav to use a Rc because the trait size is not known so we cant
-                                         // make a deep copy of it
+    Callable(CallableObject), // hav to use a Rc because the trait size is not known so we cant
+                              // make a deep copy of it
 }
 
 impl std::fmt::Display for Object {
@@ -39,8 +37,8 @@ impl PartialEq for Object {
             (Object::Boolean(a), Object::Boolean(b)) => a == b,
             (Object::Number(a), Object::Number(b)) => a == b,
             (Object::String(a), Object::String(b)) => a == b,
-            // Callables are only equal if they're the same object (pointer equality)
-            (Object::Callable(_), Object::Callable(_)) => std::ptr::eq(self, other),
+            // callable are just never eq
+            (Object::Callable(_), Object::Callable(_)) => false,
             _ => false,
         }
     }

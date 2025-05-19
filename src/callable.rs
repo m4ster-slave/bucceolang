@@ -1,13 +1,37 @@
+use crate::function::Function;
+use crate::native_functions::ClockFn;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::Interpreter;
 
-pub trait Callable: std::fmt::Debug {
-    fn call(
-        &mut self,
-        interpreter: &mut Interpreter,
-        arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>;
-    fn arity(&self) -> usize;
-    fn to_string(&self) -> String;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+#[derive(Debug, Clone)]
+pub enum CallableObject {
+    Function(Rc<RefCell<Function>>),
+    ClockFn(ClockFn),
+}
+
+impl CallableObject {
+    pub fn arity(&self) -> usize {
+        match self {
+            CallableObject::Function(f) => f.borrow().arity(),
+            CallableObject::ClockFn(nf) => nf.arity(),
+        }
+    }
+
+    pub fn call(
+        &self,
+        interp: &mut Interpreter,
+        args: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        match self {
+            CallableObject::Function(f) => {
+                let mut func_clone = f.borrow().clone();
+                func_clone.call(interp, args)
+            }
+            CallableObject::ClockFn(nf) => nf.call(interp, args),
+        }
+    }
 }

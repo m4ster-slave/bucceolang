@@ -1,3 +1,5 @@
+use crate::object::Object;
+
 /// Represents errors that can occur during the runtime execution of the code.
 #[derive(Debug, Clone)]
 pub enum RuntimeError {
@@ -19,6 +21,9 @@ pub enum RuntimeError {
     /// The first element is the line number where the error occurred.
     /// The second element is a descriptive error message.
     Other(u64, String),
+    /// special error type thats used to propagate the the return value of functions thru the
+    /// callstack, it gets caught by the 'Call()' function
+    Return(Object),
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -30,6 +35,7 @@ impl std::fmt::Display for RuntimeError {
                 write!(f, "[line: {}] Undefined variable: {}", line, name)
             }
             RuntimeError::Other(line, msg) => write!(f, "[line: {}] Runtime Error: {}", line, msg),
+            _ => write!(f, "should be a error"),
         }
     }
 }

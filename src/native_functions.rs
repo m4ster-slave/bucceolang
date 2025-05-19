@@ -1,13 +1,11 @@
-use crate::{
-    callable::Callable, interpreter::Interpreter, object::Object, runtime_error::RuntimeError,
-};
+use crate::{interpreter::Interpreter, object::Object, runtime_error::RuntimeError};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClockFn;
 
-impl Callable for ClockFn {
-    fn call(
-        &mut self,
+impl ClockFn {
+    pub fn call(
+        &self,
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -18,11 +16,11 @@ impl Callable for ClockFn {
         Ok(Object::Number(now))
     }
 
-    fn arity(&self) -> usize {
+    pub fn arity(&self) -> usize {
         0
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         String::from("<native fn clock>")
     }
 }

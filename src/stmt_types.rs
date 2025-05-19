@@ -18,6 +18,7 @@ pub enum Stmt {
     If(IfStmt),
     While(WhileStmt),
     Function(FunctionStmt),
+    Return(ReturnStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -35,6 +36,7 @@ pub trait StmtVisitor<T> {
     fn visit_if_stmt(&mut self, stmt: &mut IfStmt) -> Result<T, RuntimeError>;
     fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<T, RuntimeError>;
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<T, RuntimeError>;
+    fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -48,6 +50,7 @@ impl Stmt {
             Stmt::If(if_stmt) => visitor.visit_if_stmt(if_stmt),
             Stmt::While(while_stmt) => visitor.visit_while_stmt(while_stmt),
             Stmt::Function(function_stmt) => visitor.visit_function_stmt(function_stmt),
+            Stmt::Return(return_stmt) => visitor.visit_return_stmt(return_stmt),
         }
     }
 }
@@ -83,4 +86,10 @@ pub struct FunctionStmt {
     pub name: Token,
     pub params: Vec<Token>,
     pub body: Vec<Stmt>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReturnStmt {
+    pub keyword: Token,
+    pub value: Option<Box<Expr>>,
 }

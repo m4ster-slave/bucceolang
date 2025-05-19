@@ -1,3 +1,4 @@
+use crate::callable::CallableObject;
 use crate::environment::Environment;
 use crate::expr_types::*;
 use crate::function::Function;
@@ -227,17 +228,17 @@ impl ExprVisitor<Object> for Interpreter {
 
         match callee {
             Object::Callable(func) => {
-                if arguments.len() != func.borrow().arity() {
+                if arguments.len() != func.arity() {
                     Err(RuntimeError::Other(
                         expr.paren.line(),
                         format!(
                             "Expected {} arguments but got {}.",
-                            func.borrow().arity(),
+                            func.arity(),
                             arguments.len()
                         ),
                     ))
                 } else {
-                    Ok(func.borrow_mut().call(self, arguments)?)
+                    func.call(self, arguments)
                 }
             }
             _ => Err(RuntimeError::TypeError(
@@ -309,15 +310,24 @@ impl StmtVisitor<()> for Interpreter {
 
     /// Register a new function in the environment for executing it later
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<(), RuntimeError> {
-        let function = Function {
-            declaration: stmt.clone(),
-        };
+        // .clone increases the RC
+        let function = Function::new(stmt.clone(), self.environment.clone());
 
         self.environment.borrow_mut().define(
             stmt.name.lexeme().to_string(),
-            Object::Callable(Rc::new(RefCell::new(function))),
+            Object::Callable(CallableObject::Function(Rc::new(RefCell::new(function)))),
         )?;
         Ok(())
+    }
+
+    fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<(), RuntimeError> {
+        let value = if let Some(expr) = &mut stmt.value {
+            Some(expr.accept(self)?)
+        } else {
+            None
+        };
+
+        Err(RuntimeError::Return(value.unwrap()))
     }
 }
 
@@ -356,7 +366,7 @@ impl Interpreter {
             .borrow_mut()
             .define(
                 "clock".into(),
-                Object::Callable(Rc::new(RefCell::new(ClockFn))),
+                Object::Callable(CallableObject::ClockFn(ClockFn)),
             )
             .expect("Failed to define native function 'clock'");
 

@@ -1,7 +1,7 @@
 use crate::expr_types::*;
 use crate::object::Object;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::{FunctionStmt, IfStmt, Stmt, VarStmt, WhileStmt};
+use crate::stmt_types::{FunctionStmt, IfStmt, ReturnStmt, Stmt, VarStmt, WhileStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -509,8 +509,25 @@ impl Parser {
             TokenType::If => self.if_statment(),
             TokenType::While => self.while_statment(),
             TokenType::For => self.for_statement(),
+            TokenType::Return => self.return_statement(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.advance();
+
+        let mut value: Option<Box<Expr>> = None;
+        if !self.check(&TokenType::Semicolon) {
+            value = Some(Box::new(self.expression()?));
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after return value.")?;
+
+        Ok(Stmt::Return(ReturnStmt {
+            keyword: self.previous().clone(),
+            value,
+        }))
     }
 
     /// Parses a declaration, which can be a variable declaration or any other statement.
