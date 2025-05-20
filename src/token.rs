@@ -122,3 +122,18 @@ impl fmt::Display for Token {
         write!(f, "{:?} {}", self.token_type, self.lexeme)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::object::Object;
+
+    use super::*;
+    #[test]
+    fn test_token() {
+        let t = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 0);
+        assert_eq!(t.line(), 0);
+        assert_eq!(t.lexeme(), "nil");
+        assert_eq!(*t.token_type(), TokenType::Nil);
+        assert_eq!(*t.literal(), Some(Object::Nil));
+    }
+}

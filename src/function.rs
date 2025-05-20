@@ -8,13 +8,22 @@ use crate::{
     stmt_types::{FunctionStmt, StmtVisitor},
 };
 
+/// Represents a user-defined function in the language.
 #[derive(Debug, Clone)]
 pub struct Function {
+    /// The statement that declares this function.
     pub declaration: FunctionStmt,
+    /// The environment in which the function was defined (the closure).
     pub closure: Rc<RefCell<Environment>>,
 }
 
 impl Function {
+    /// Creates a new `Function` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `declaration` - The `FunctionStmt` that declares this function.
+    /// * `closure` - The environment where the function was defined.
     pub fn new(declaration: FunctionStmt, closure: Rc<RefCell<Environment>>) -> Function {
         Function {
             declaration,
@@ -24,6 +33,16 @@ impl Function {
 }
 
 impl Function {
+    /// Calls the function with the given arguments.
+    ///
+    /// # Arguments
+    ///
+    /// * `interpreter` - The interpreter executing the code.
+    /// * `arguments` - A vector of `Object` representing the arguments passed to the function.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the return value of the function as an `Object`, or a `RuntimeError` if an error occurs during execution
     pub fn call(
         &mut self,
         interpreter: &mut crate::interpreter::Interpreter,
@@ -56,10 +75,12 @@ impl Function {
         Ok(return_val)
     }
 
+    /// Returns the number of parameters the function expects
     pub fn arity(&self) -> usize {
         self.declaration.params.len()
     }
 
+    /// Returns a string representation of the function
     pub fn to_string(&self) -> String {
         format!("<fn {}>", self.declaration.name.lexeme())
     }

@@ -1,6 +1,6 @@
 
 [package]
-name = "interpreter"
+name = "bucceolang"
 version = "0.1.0"
 authors = ["Lukas Weger<mail@weger.dev>"]
 edition = "2021"

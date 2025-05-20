@@ -860,4 +860,737 @@ pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::expr_types::*;
+    use crate::object::Object;
+    use crate::parser::{self, Parser};
+    use crate::stmt_types::*;
+    use crate::token::{Token, TokenType};
+
+    // Helper function to create tokens for testing
+    fn token(token_type: TokenType, lexeme: &str, literal: Option<Object>, line: usize) -> Token {
+        Token::new(token_type, lexeme, literal, line)
+    }
+
+    #[test]
+    fn test_parse_expression_literal() {
+        let tokens = vec![
+            token(TokenType::Number, "42", Some(Object::Number(42.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Literal(lit_expr) => {
+                    if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                        assert_eq!(*value, 42.0);
+                    } else {
+                        panic!("Expected number literal");
+                    }
+                }
+                _ => panic!("Expected literal expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_variable_declaration() {
+        let tokens = vec![
+            token(TokenType::VarKeyword, "var", None, 1),
+            token(TokenType::Var, "x", None, 1),
+            token(TokenType::Equal, "=", None, 1),
+            token(TokenType::Number, "10", Some(Object::Number(10.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Var(var_stmt) => {
+                assert_eq!(var_stmt.name.lexeme(), "x");
+
+                match &var_stmt.initializer {
+                    Some(Expr::Literal(lit_expr)) => {
+                        if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                            assert_eq!(*value, 10.0);
+                        } else {
+                            panic!("Expected number literal");
+                        }
+                    }
+                    _ => panic!("Expected literal expression as initializer"),
+                }
+            }
+            _ => panic!("Expected variable declaration statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_assignment() {
+        let tokens = vec![
+            token(TokenType::Var, "x", None, 1),
+            token(TokenType::Equal, "=", None, 1),
+            token(TokenType::Number, "42", Some(Object::Number(42.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Assign(assign_expr) => {
+                    assert_eq!(assign_expr.name.lexeme(), "x");
+
+                    match &*assign_expr.value {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, 42.0);
+                            } else {
+                                panic!("Expected number literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as assignment value"),
+                    }
+                }
+                _ => panic!("Expected assignment expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_binary_expression() {
+        let tokens = vec![
+            token(TokenType::Number, "1", Some(Object::Number(1.0)), 1),
+            token(TokenType::Plus, "+", None, 1),
+            token(TokenType::Number, "2", Some(Object::Number(2.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Binary(bin_expr) => {
+                    match &*bin_expr.left {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, 1.0);
+                            } else {
+                                panic!("Expected number literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as left operand"),
+                    }
+
+                    assert_eq!(bin_expr.operator.token_type(), &TokenType::Plus);
+
+                    match &*bin_expr.right {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, 2.0);
+                            } else {
+                                panic!("Expected number literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as right operand"),
+                    }
+                }
+                _ => panic!("Expected binary expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_grouping_expression() {
+        let tokens = vec![
+            token(TokenType::LeftParen, "(", None, 1),
+            token(TokenType::Number, "42", Some(Object::Number(42.0)), 1),
+            token(TokenType::RightParen, ")", None, 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Grouping(group_expr) => match &*group_expr.expr {
+                    Expr::Literal(lit_expr) => {
+                        if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                            assert_eq!(*value, 42.0);
+                        } else {
+                            panic!("Expected number literal");
+                        }
+                    }
+                    _ => panic!("Expected literal expression in grouping"),
+                },
+                _ => panic!("Expected grouping expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_unary_expression() {
+        let tokens = vec![
+            token(TokenType::Minus, "-", None, 1),
+            token(TokenType::Number, "42", Some(Object::Number(42.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Unary(unary_expr) => {
+                    assert_eq!(unary_expr.prefix.token_type(), &TokenType::Minus);
+
+                    match &*unary_expr.operator {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Number(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, 42.0);
+                            } else {
+                                panic!("Expected number literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as unary operand"),
+                    }
+                }
+                _ => panic!("Expected unary expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_logical_expression() {
+        let tokens = vec![
+            token(TokenType::True, "true", Some(Object::Boolean(true)), 1),
+            token(TokenType::And, "and", None, 1),
+            token(TokenType::False, "false", Some(Object::Boolean(false)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Expression(expr) => match expr {
+                Expr::Logical(logical_expr) => {
+                    match &*logical_expr.left {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, true);
+                            } else {
+                                panic!("Expected boolean literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as left operand"),
+                    }
+
+                    assert_eq!(logical_expr.operator.token_type(), &TokenType::And);
+
+                    match &*logical_expr.right {
+                        Expr::Literal(lit_expr) => {
+                            if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
+                                assert_eq!(*value, false);
+                            } else {
+                                panic!("Expected boolean literal");
+                            }
+                        }
+                        _ => panic!("Expected literal expression as right operand"),
+                    }
+                }
+                _ => panic!("Expected logical expression"),
+            },
+            _ => panic!("Expected expression statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_print_statement() {
+        let tokens = vec![
+            token(TokenType::Print, "print", None, 1),
+            token(
+                TokenType::String,
+                "\"Hello, World!\"",
+                Some(Object::String("Hello, World!".to_string())),
+                1,
+            ),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Eof, "", None, 1),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Print(expr) => match expr {
+                Expr::Literal(lit_expr) => {
+                    if let Some(Object::String(value)) = lit_expr.literal.literal() {
+                        assert_eq!(value, "Hello, World!");
+                    } else {
+                        panic!("Expected string literal");
+                    }
+                }
+                _ => panic!("Expected literal expression"),
+            },
+            _ => panic!("Expected print statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_block_statement() {
+        let tokens = vec![
+            token(TokenType::LeftBrace, "{", None, 1),
+            token(TokenType::VarKeyword, "var", None, 1),
+            token(TokenType::Var, "x", None, 1),
+            token(TokenType::Equal, "=", None, 1),
+            token(TokenType::Number, "10", Some(Object::Number(10.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Print, "print", None, 2),
+            token(TokenType::Var, "x", None, 2),
+            token(TokenType::Semicolon, ";", None, 2),
+            token(TokenType::RightBrace, "}", None, 3),
+            token(TokenType::Eof, "", None, 3),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Block(block_stmts) => {
+                assert_eq!(block_stmts.len(), 2);
+
+                // First statement should be variable declaration
+                match &block_stmts[0] {
+                    Stmt::Var(var_stmt) => {
+                        assert_eq!(var_stmt.name.lexeme(), "x");
+                    }
+                    _ => panic!("Expected variable declaration statement"),
+                }
+
+                // Second statement should be print statement
+                match &block_stmts[1] {
+                    Stmt::Print(expr) => match expr {
+                        Expr::Variable(var_expr) => {
+                            assert_eq!(var_expr.name.lexeme(), "x");
+                        }
+                        _ => panic!("Expected variable expression"),
+                    },
+                    _ => panic!("Expected print statement"),
+                }
+            }
+            _ => panic!("Expected block statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_if_statement() {
+        let tokens = vec![
+            token(TokenType::If, "if", None, 1),
+            token(TokenType::LeftParen, "(", None, 1),
+            token(TokenType::True, "true", Some(Object::Boolean(true)), 1),
+            token(TokenType::RightParen, ")", None, 1),
+            token(TokenType::LeftBrace, "{", None, 1),
+            token(TokenType::Print, "print", None, 2),
+            token(
+                TokenType::String,
+                "\"Then branch\"",
+                Some(Object::String("Then branch".to_string())),
+                2,
+            ),
+            token(TokenType::Semicolon, ";", None, 2),
+            token(TokenType::RightBrace, "}", None, 3),
+            token(TokenType::Else, "else", None, 3),
+            token(TokenType::LeftBrace, "{", None, 3),
+            token(TokenType::Print, "print", None, 4),
+            token(
+                TokenType::String,
+                "\"Else branch\"",
+                Some(Object::String("Else branch".to_string())),
+                4,
+            ),
+            token(TokenType::Semicolon, ";", None, 4),
+            token(TokenType::RightBrace, "}", None, 5),
+            token(TokenType::Eof, "", None, 5),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::If(if_stmt) => {
+                // Check condition
+                match &if_stmt.condition {
+                    Expr::Literal(lit_expr) => {
+                        if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
+                            assert_eq!(*value, true);
+                        } else {
+                            panic!("Expected boolean literal");
+                        }
+                    }
+                    _ => panic!("Expected literal expression as condition"),
+                }
+
+                // Check then branch
+                match &*if_stmt.then_branch {
+                    Stmt::Block(then_stmts) => {
+                        assert_eq!(then_stmts.len(), 1);
+                        match &then_stmts[0] {
+                            Stmt::Print(expr) => match expr {
+                                Expr::Literal(lit_expr) => {
+                                    if let Some(Object::String(value)) = lit_expr.literal.literal()
+                                    {
+                                        assert_eq!(value, "Then branch");
+                                    } else {
+                                        panic!("Expected string literal");
+                                    }
+                                }
+                                _ => panic!("Expected literal expression"),
+                            },
+                            _ => panic!("Expected print statement"),
+                        }
+                    }
+                    _ => panic!("Expected block statement as then branch"),
+                }
+
+                // Check else branch
+                match &if_stmt.else_branch {
+                    Some(else_branch) => match &**else_branch {
+                        Stmt::Block(else_stmts) => {
+                            assert_eq!(else_stmts.len(), 1);
+                            match &else_stmts[0] {
+                                Stmt::Print(expr) => match expr {
+                                    Expr::Literal(lit_expr) => {
+                                        if let Some(Object::String(value)) =
+                                            lit_expr.literal.literal()
+                                        {
+                                            assert_eq!(value, "Else branch");
+                                        } else {
+                                            panic!("Expected string literal");
+                                        }
+                                    }
+                                    _ => panic!("Expected literal expression"),
+                                },
+                                _ => panic!("Expected print statement"),
+                            }
+                        }
+                        _ => panic!("Expected block statement as else branch"),
+                    },
+                    None => panic!("Expected else branch"),
+                }
+            }
+            _ => panic!("Expected if statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_while_statement() {
+        let tokens = vec![
+            token(TokenType::While, "while", None, 1),
+            token(TokenType::LeftParen, "(", None, 1),
+            token(TokenType::True, "true", Some(Object::Boolean(true)), 1),
+            token(TokenType::RightParen, ")", None, 1),
+            token(TokenType::LeftBrace, "{", None, 1),
+            token(TokenType::Print, "print", None, 2),
+            token(
+                TokenType::String,
+                "\"Loop body\"",
+                Some(Object::String("Loop body".to_string())),
+                2,
+            ),
+            token(TokenType::Semicolon, ";", None, 2),
+            token(TokenType::RightBrace, "}", None, 3),
+            token(TokenType::Eof, "", None, 3),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::While(while_stmt) => {
+                // Check condition
+                match &while_stmt.condition {
+                    Expr::Literal(lit_expr) => {
+                        if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
+                            assert_eq!(*value, true);
+                        } else {
+                            panic!("Expected boolean literal");
+                        }
+                    }
+                    _ => panic!("Expected literal expression as condition"),
+                }
+
+                // Check body
+                match &*while_stmt.body {
+                    Stmt::Block(body_stmts) => {
+                        assert_eq!(body_stmts.len(), 1);
+                        match &body_stmts[0] {
+                            Stmt::Print(expr) => match expr {
+                                Expr::Literal(lit_expr) => {
+                                    if let Some(Object::String(value)) = lit_expr.literal.literal()
+                                    {
+                                        assert_eq!(value, "Loop body");
+                                    } else {
+                                        panic!("Expected string literal");
+                                    }
+                                }
+                                _ => panic!("Expected literal expression"),
+                            },
+                            _ => panic!("Expected print statement"),
+                        }
+                    }
+                    _ => panic!("Expected block statement as while body"),
+                }
+            }
+            _ => panic!("Expected while statement"),
+        }
+    }
+
+    #[test]
+    fn test_parse_for_statement() {
+        let tokens = vec![
+            token(TokenType::For, "for", None, 1),
+            token(TokenType::LeftParen, "(", None, 1),
+            token(TokenType::VarKeyword, "var", None, 1),
+            token(TokenType::Var, "i", None, 1),
+            token(TokenType::Equal, "=", None, 1),
+            token(TokenType::Number, "0", Some(Object::Number(0.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Var, "i", None, 1),
+            token(TokenType::Less, "<", None, 1),
+            token(TokenType::Number, "10", Some(Object::Number(10.0)), 1),
+            token(TokenType::Semicolon, ";", None, 1),
+            token(TokenType::Var, "i", None, 1),
+            token(TokenType::Equal, "=", None, 1),
+            token(TokenType::Var, "i", None, 1),
+            token(TokenType::Plus, "+", None, 1),
+            token(TokenType::Number, "1", Some(Object::Number(1.0)), 1),
+            token(TokenType::RightParen, ")", None, 1),
+            token(TokenType::LeftBrace, "{", None, 1),
+            token(TokenType::Print, "print", None, 2),
+            token(TokenType::Var, "i", None, 2),
+            token(TokenType::Semicolon, ";", None, 2),
+            token(TokenType::RightBrace, "}", None, 3),
+            token(TokenType::Eof, "", None, 3),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        // For loops are desugared into while loops with blocks
+        match &statements[0] {
+            Stmt::Block(block_stmts) => {
+                assert_eq!(block_stmts.len(), 2);
+
+                // First statement should be variable declaration for initializer
+                match &block_stmts[0] {
+                    Stmt::Var(var_stmt) => {
+                        assert_eq!(var_stmt.name.lexeme(), "i");
+                    }
+                    _ => panic!("Expected variable declaration statement for initializer"),
+                }
+
+                // Second statement should be while loop
+                match &block_stmts[1] {
+                    Stmt::While(while_stmt) => {
+                        // Check condition
+                        match &while_stmt.condition {
+                            Expr::Binary(bin_expr) => {
+                                match &*bin_expr.left {
+                                    Expr::Variable(var_expr) => {
+                                        assert_eq!(var_expr.name.lexeme(), "i");
+                                    }
+                                    _ => panic!("Expected variable expression as left operand"),
+                                }
+
+                                assert_eq!(bin_expr.operator.token_type(), &TokenType::Less);
+
+                                match &*bin_expr.right {
+                                    Expr::Literal(lit_expr) => {
+                                        if let Some(Object::Number(value)) =
+                                            lit_expr.literal.literal()
+                                        {
+                                            assert_eq!(*value, 10.0);
+                                        } else {
+                                            panic!("Expected number literal");
+                                        }
+                                    }
+                                    _ => panic!("Expected literal expression as right operand"),
+                                }
+                            }
+                            _ => panic!("Expected binary expression as condition"),
+                        }
+
+                        // Check body (should be a block with the original body and increment)
+                        match &*while_stmt.body {
+                            Stmt::Block(body_stmts) => {
+                                assert_eq!(body_stmts.len(), 2);
+
+                                // First statement should be the original body
+                                match &body_stmts[0] {
+                                    Stmt::Block(original_body) => {
+                                        assert_eq!(original_body.len(), 1);
+
+                                        match &original_body[0] {
+                                            Stmt::Print(expr) => match expr {
+                                                Expr::Variable(var_expr) => {
+                                                    assert_eq!(var_expr.name.lexeme(), "i");
+                                                }
+                                                _ => panic!("Expected variable expression"),
+                                            },
+                                            _ => panic!("Expected print statement"),
+                                        }
+                                    }
+                                    _ => panic!("Expected block statement as original body"),
+                                }
+
+                                // Second statement should be the increment
+                                match &body_stmts[1] {
+                                    Stmt::Expression(expr) => {
+                                        match expr {
+                                            Expr::Assign(_) => {
+                                                // This is the increment expression
+                                                // We could check more details but this is sufficient
+                                            }
+                                            _ => panic!(
+                                                "Expected assignment expression as increment"
+                                            ),
+                                        }
+                                    }
+                                    _ => panic!("Expected expression statement as increment"),
+                                }
+                            }
+                            _ => panic!("Expected block statement as while body"),
+                        }
+                    }
+                    _ => panic!("Expected while statement as desugared for loop"),
+                }
+            }
+            _ => panic!("Expected block statement as desugared for loop"),
+        }
+    }
+
+    #[test]
+    fn test_parse_function_declaration() {
+        let tokens = vec![
+            token(TokenType::Fn, "fn", None, 1),
+            token(TokenType::Var, "add", None, 1),
+            token(TokenType::LeftParen, "(", None, 1),
+            token(TokenType::Var, "a", None, 1),
+            token(TokenType::Comma, ",", None, 1),
+            token(TokenType::Var, "b", None, 1),
+            token(TokenType::RightParen, ")", None, 1),
+            token(TokenType::LeftBrace, "{", None, 1),
+            token(TokenType::Return, "return", None, 2),
+            token(TokenType::Var, "a", None, 2),
+            token(TokenType::Plus, "+", None, 2),
+            token(TokenType::Var, "b", None, 2),
+            token(TokenType::Semicolon, ";", None, 2),
+            token(TokenType::RightBrace, "}", None, 3),
+            token(TokenType::Eof, "", None, 3),
+        ];
+
+        let result = parser::parse(tokens);
+        assert!(result.is_ok());
+
+        let statements = result.unwrap();
+        assert_eq!(statements.len(), 1);
+
+        match &statements[0] {
+            Stmt::Function(func_stmt) => {
+                // Check function name
+                assert_eq!(func_stmt.name.lexeme(), "add");
+
+                // Check parameters
+                assert_eq!(func_stmt.params.len(), 2);
+                assert_eq!(func_stmt.params[0].lexeme(), "a");
+                assert_eq!(func_stmt.params[1].lexeme(), "b");
+
+                // Check body
+                assert_eq!(func_stmt.body.len(), 1);
+
+                match &func_stmt.body[0] {
+                    Stmt::Return(return_stmt) => match &return_stmt.value {
+                        Some(expr) => match &**expr {
+                            Expr::Binary(bin_expr) => {
+                                match &*bin_expr.left {
+                                    Expr::Variable(var_expr) => {
+                                        assert_eq!(var_expr.name.lexeme(), "a");
+                                    }
+                                    _ => panic!("Expected variable expression as left operand"),
+                                }
+
+                                assert_eq!(bin_expr.operator.token_type(), &TokenType::Plus);
+
+                                match &*bin_expr.right {
+                                    Expr::Variable(var_expr) => {
+                                        assert_eq!(var_expr.name.lexeme(), "b");
+                                    }
+                                    _ => panic!("Expected variable expression as right operand"),
+                                }
+                            }
+                            _ => panic!("Expected binary expression as return value"),
+                        },
+                        None => panic!("Expected return value"),
+                    },
+                    _ => panic!("Expected return statement in function body"),
+                }
+            }
+            _ => panic!("Expected function declaration"),
+        }
+    }
+}

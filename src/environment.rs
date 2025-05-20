@@ -4,11 +4,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// `Environment` represents a lexical scope for variable bindings in the interpreter.
+/// Represents a variable environment (scope) for the interpreter.
 ///
-/// It maintains a mapping of variable names to their values, and can be nested to create
-/// lexical scopes. Each environment can have an optional parent (enclosing) environment
-/// to support variable lookups in outer scopes.
+/// Stores variable bindings and supports lexical scoping via an optional enclosing environment.
 #[derive(Debug)]
 pub struct Environment {
     /// Optional reference to the enclosing (parent) environment
@@ -70,7 +68,7 @@ impl Environment {
         }
     }
 
-    /// Retrieves the value of a variable from the environment.
+    /// Retrieves the value of a variable from the environment or its ancestors.
     ///
     /// If the variable is not found in the current environment,
     /// the search continues in the parent environments.
@@ -101,7 +99,7 @@ impl Environment {
         }
     }
 
-    /// Assigns a new value to an existing variable.
+    /// Assigns a new value to an existing variable in the environment chain.
     ///
     /// The assignment succeeds only if the variable already exists
     /// in the current environment or any parent environment.

@@ -5,6 +5,15 @@ use std::cell::RefCell;
 use std::io;
 use std::io::prelude::*;
 
+/// Returns the current time in seconds since the Unix epoch as a floating point number.
+///
+/// # Usage
+/// ```lox
+/// var t = clock(); // t will be a number representing seconds since 1970-01-01 00:00:00 UTC
+/// ```
+///
+/// # Returns
+/// - `Number`: The current time in seconds (f64).
 #[derive(Clone, Debug)]
 pub struct ClockFn;
 
@@ -30,6 +39,15 @@ impl ClockFn {
     }
 }
 
+/// Reads a single line from standard input and returns it as a string (with whitespace trimmed).
+///
+/// # Usage
+/// ```lox
+/// var input = read(); // Waits for user input, then assigns the trimmed string to `input`
+/// ```
+///
+/// # Returns
+/// - `String`: The line read from stdin, trimmed of whitespace.
 #[derive(Clone, Debug)]
 pub struct ReadFn;
 impl ReadFn {
@@ -69,6 +87,24 @@ fn seed_from_time() -> u64 {
     (nanos & 0x7fffffff) as u64
 }
 
+/// Returns a pseudo-random integer in the range `[0, max)`.
+///
+/// Uses a simple linear congruential generator (LCG) seeded from the current system time.
+/// The result is always less than the provided `max` value.
+///
+/// # Usage
+/// ```lox
+/// var r = random(10); // r will be an integer between 0 and 9
+/// ```
+///
+/// # Arguments
+/// - `max` (`Number`): The exclusive upper bound for the random number. Must be positive.
+///
+/// # Returns
+/// - `Number`: A random integer in `[0, max)`.
+///
+/// # Errors
+/// - If `max` is not a positive number, or not a number, a runtime error is returned.
 #[derive(Clone, Debug)]
 pub struct RandomFn;
 impl RandomFn {
