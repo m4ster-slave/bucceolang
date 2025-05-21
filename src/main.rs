@@ -78,7 +78,7 @@ fn main() -> ExitCode {
 }
 
 fn run(source: &str) -> ExitCode {
-    println!("\nRunning: {}", source);
+    // println!("\nRunning: {}", source);
     let tokens = match tokenize(source) {
         Ok(t) => t,
         Err(e) => {

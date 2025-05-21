@@ -10,18 +10,20 @@ use crate::stmt_types::*;
 use crate::token::TokenType;
 
 use std::cell::RefCell;
+use std::io::Write;
 use std::rc::Rc;
 
 /// A struct responsible for interpreting a list of statements.
 ///
 /// It processes each statement and can potentially return a `RuntimeError`
 /// if an issue occurs during execution.
-#[derive(Debug)]
 pub struct Interpreter {
     /// holds any additional environments by the user
     pub environment: Rc<RefCell<Environment>>,
     /// holds the outermost global environment
     pub globals: Rc<RefCell<Environment>>,
+    /// output destination for print statements
+    pub output: Rc<RefCell<dyn Write>>,
 }
 
 impl ExprVisitor<Object> for Interpreter {
@@ -256,8 +258,10 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<(), RuntimeError> {
-        let obj: Object = stmt.accept(self)?;
-        println!("{obj}");
+        let value = stmt.accept(self)?;
+        writeln!(self.output.borrow_mut(), "{}", value)
+            .map_err(|e| RuntimeError::Other(0, format!("Print failed: {}", e)))?;
+        self.output.borrow_mut().flush().ok();
         Ok(())
     }
 
@@ -358,8 +362,8 @@ impl Interpreter {
         Ok(())
     }
 
-    /// Create a new 'Interpreter' instance
-    pub fn new() -> Interpreter {
+    /// Creates a new interpreter with the given output destination.
+    pub fn new_with_output(output: Rc<RefCell<dyn Write>>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
 
         globals
@@ -389,7 +393,13 @@ impl Interpreter {
         Interpreter {
             environment: globals.to_owned(),
             globals,
+            output,
         }
+    }
+
+    /// Default constructor, writes to stdout
+    pub fn new() -> Self {
+        Self::new_with_output(Rc::new(RefCell::new(std::io::stdout())))
     }
 }
 

@@ -6,3 +6,7 @@ authors = ["Lukas Weger<mail@weger.dev>"]
 edition = "2021"
 
 [dependencies]
+wasm-bindgen = "0.2.100"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

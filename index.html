@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bucceolang</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/7.css@0.7.0/dist/7.css"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        min-width: 100vw;
+        margin: 0;
+        background: url("assets/win7_bg.webp") no-repeat center center fixed;
+        background-size: cover;
+        position: relative;
+        font-family: "Segoe UI", "Lucida Console", monospace;
+      }
+      .window.active {
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      .taskbar {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 48px;
+        background: linear-gradient(to top, #406080 80%, #7eb6f7 100%);
+        border-top: 1.5px solid #b6c7e3;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        z-index: 100;
+      }
+      .start-btn {
+        width: 46px;
+        height: 46px;
+        margin: 0 8px;
+        border-radius: 8px;
+        background: linear-gradient(145deg, #6ec6ff 0%, #005ba1 100%);
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: filter 0.2s;
+      }
+      .start-btn:hover {
+        filter: brightness(1.1);
+      }
+      .start-btn img {
+        width: 32px;
+        height: 32px;
+      }
+      .taskbar-apps {
+        display: flex;
+        align-items: center;
+        margin-left: 12px;
+        flex: 1;
+      }
+      .taskbar-clock {
+        color: #fff;
+        font-size: 16px;
+        margin-right: 18px;
+        font-family: "Segoe UI", Arial, sans-serif;
+        text-shadow: 1px 1px 2px #0008;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div
+      class="window active"
+      style="
+        max-width: 61.5vw;
+        position: absolute;
+        left: 20px;
+        top: 60px;
+        transform: none;
+      "
+    >
+      <div class="title-bar">
+        <div class="title-bar-text">Notepad.exe</div>
+        <div class="title-bar-controls">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+
+      <ul role="menubar" class="can-hover">
+        <li role="menuitem" tabindex="0" aria-haspopup="true">
+          File
+          <ul role="menu">
+            <li role="menuitem">
+              <a id="runMenu">Run <span>Ctrl+R</span></a>
+            </li>
+          </ul>
+        </li>
+        <li role="menuitem" tabindex="0" aria-haspopup="true">
+          Examples
+          <ul role="menu">
+            <li role="menuitem">
+              <a onclick="setExample('Hello, world!')">Hello</a>
+            </li>
+            <li role="menuitem">
+              <a onclick="setExample('console.log(Testing)')">Log</a>
+            </li>
+            <li role="menuitem">
+              <a onclick="setExample('greet(custom)')">Greet</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="window-body has-space">
+        <textarea
+          id="editor"
+          style="
+            max-width: 60vw;
+            width: 40vw;
+            height: 50vh;
+            min-width: 20vh;
+            max-height: 80vh;
+            font-size: 24pt;
+          "
+        ></textarea>
+      </div>
+    </div>
+
+    <div
+      class="window"
+      id="terminalWindow"
+      style="
+        width: 35vw;
+        height: 80vh;
+        position: absolute;
+        right: 20px;
+        top: 60px;
+        transform: none;
+      "
+    >
+      <div class="title-bar">
+        <div class="title-bar-text">Terminal</div>
+        <div class="title-bar-controls">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+      <div
+        class="window-body has-space"
+        style="background: #111; color: #eee; height: 70vh"
+      >
+        <pre id="terminalOutput" style="margin: 0; white-space: pre-wrap"></pre>
+        <input
+          id="terminalInput"
+          style="
+            width: 100%;
+            background: #222;
+            color: #fff;
+            border: none;
+            outline: none;
+            display: none;
+          "
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <div class="taskbar">
+      <div class="start-btn" title="Start">
+        <img src="assets/win7_start_icon.webp" alt="Start" />
+      </div>
+      <div class="taskbar-apps">
+        <img
+          src="assets/win7_notepad_icon.webp"
+          alt="Notepad"
+          style="
+            width: 32px;
+            height: 32px;
+            margin: 0 8px;
+            box-shadow: 0 2px 6px #0004;
+            border-radius: 4px;
+            background: #fff4;
+          "
+        />
+        <img
+          src="assets/win7_cmd_icon.webp"
+          alt="Cmd"
+          style="
+            width: 32px;
+            height: 32px;
+            margin: 0 8px;
+            box-shadow: 0 2px 6px #0004;
+            border-radius: 4px;
+            background: #fff4;
+          "
+        />
+      </div>
+      <div class="taskbar-clock" id="taskbarClock"></div>
+    </div>
+
+    <script src="./assets/util.js"></script>
+    <script type="module" src="./assets/bucceolang.js"></script>
+  </body>
+</html>

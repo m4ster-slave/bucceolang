@@ -1,4 +1,5 @@
 use crate::function::Function;
+use crate::native_functions;
 use crate::native_functions::{ClockFn, RandomFn, ReadFn};
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
