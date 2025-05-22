@@ -8,90 +8,13 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/7.css@0.7.0/dist/7.css"
     />
-    <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        min-height: 100vh;
-        min-width: 100vw;
-        margin: 0;
-        background: url("assets/win7_bg.webp") no-repeat center center fixed;
-        background-size: cover;
-        position: relative;
-        font-family: "Segoe UI", "Lucida Console", monospace;
-      }
-      .window.active {
-        position: absolute;
-        top: 60px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 10;
-      }
-      .taskbar {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 48px;
-        background: linear-gradient(to top, #406080 80%, #7eb6f7 100%);
-        border-top: 1.5px solid #b6c7e3;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        z-index: 100;
-      }
-      .start-btn {
-        width: 46px;
-        height: 46px;
-        margin: 0 8px;
-        border-radius: 8px;
-        background: linear-gradient(145deg, #6ec6ff 0%, #005ba1 100%);
-        border: 2px solid #fff;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: filter 0.2s;
-      }
-      .start-btn:hover {
-        filter: brightness(1.1);
-      }
-      .start-btn img {
-        width: 32px;
-        height: 32px;
-      }
-      .taskbar-apps {
-        display: flex;
-        align-items: center;
-        margin-left: 12px;
-        flex: 1;
-      }
-      .taskbar-clock {
-        color: #fff;
-        font-size: 16px;
-        margin-right: 18px;
-        font-family: "Segoe UI", Arial, sans-serif;
-        text-shadow: 1px 1px 2px #0008;
-      }
-    </style>
+    <link rel="stylesheet" href="assets/style.css" />
+
+    <link rel="icon" href="/assets/favicon.png" type="image/png" />
   </head>
 
   <body>
-    <div
-      class="window active"
-      style="
-        max-width: 61.5vw;
-        position: absolute;
-        left: 20px;
-        top: 60px;
-        transform: none;
-      "
-    >
+    <div class="window active">
       <div class="title-bar">
         <div class="title-bar-text">Notepad.exe</div>
         <div class="title-bar-controls">
@@ -106,7 +29,10 @@
           File
           <ul role="menu">
             <li role="menuitem">
-              <a id="runMenu">Run <span>Ctrl+R</span></a>
+              <a id="runMenu">Run file</a>
+            </li>
+            <li role="menuitem">
+              <a id="clearInput">Clear editor</a>
             </li>
           </ul>
         </li>
@@ -114,45 +40,27 @@
           Examples
           <ul role="menu">
             <li role="menuitem">
-              <a onclick="setExample('Hello, world!')">Hello</a>
+              <a onclick="setExample(1)">Hello World</a>
             </li>
             <li role="menuitem">
-              <a onclick="setExample('console.log(Testing)')">Log</a>
+              <a onclick="setExample(2)">Greet</a>
             </li>
             <li role="menuitem">
-              <a onclick="setExample('greet(custom)')">Greet</a>
+              <a onclick="setExample(3)">Squares</a>
+            </li>
+            <li role="menuitem">
+              <a onclick="setExample(4)">Class Person</a>
             </li>
           </ul>
         </li>
       </ul>
 
       <div class="window-body has-space">
-        <textarea
-          id="editor"
-          style="
-            max-width: 60vw;
-            width: 40vw;
-            height: 50vh;
-            min-width: 20vh;
-            max-height: 80vh;
-            font-size: 24pt;
-          "
-        ></textarea>
+        <textarea id="editor"></textarea>
       </div>
     </div>
 
-    <div
-      class="window"
-      id="terminalWindow"
-      style="
-        width: 35vw;
-        height: 80vh;
-        position: absolute;
-        right: 20px;
-        top: 60px;
-        transform: none;
-      "
-    >
+    <div class="window" id="terminalWindow">
       <div class="title-bar">
         <div class="title-bar-text">Terminal</div>
         <div class="title-bar-controls">
@@ -161,23 +69,37 @@
           <button aria-label="Close"></button>
         </div>
       </div>
+      <div class="window-body has-space">
+        <pre id="terminalOutput"></pre>
+      </div>
+    </div>
+
+    <div id="aboutDialog" class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">About Bucceolang</div>
+        <div class="title-bar-controls">
+          <button aria-label="Close" onclick="closeAboutDialog()"></button>
+        </div>
+      </div>
       <div
-        class="window-body has-space"
-        style="background: #111; color: #eee; height: 70vh"
+        class="window-body"
+        style="text-align: center; padding: 24px 16px 16px 16px"
       >
-        <pre id="terminalOutput" style="margin: 0; white-space: pre-wrap"></pre>
-        <input
-          id="terminalInput"
-          style="
-            width: 100%;
-            background: #222;
-            color: #fff;
-            border: none;
-            outline: none;
-            display: none;
-          "
-          autocomplete="off"
+        <img
+          src="assets/logo.png"
+          alt="Bucceolang Logo"
+          style="width: 256px; height: 256; margin-bottom: 12px"
         />
+        <p style="margin: 0 0 8px 0">A interpreter written in Rust</p>
+        <p style="margin: 0 0 12px 0; font-size: 0.95em; color: #555">
+          Created by Lukas Weger & Theo Stolzlechner
+        </p>
+        <a
+          href="https://github.com/m4ster-slave/bucceolang"
+          target="_blank"
+          style="color: #005ba1; text-decoration: underline"
+          >View on GitHub</a
+        >
       </div>
     </div>
 
@@ -186,35 +108,24 @@
         <img src="assets/win7_start_icon.webp" alt="Start" />
       </div>
       <div class="taskbar-apps">
-        <img
-          src="assets/win7_notepad_icon.webp"
-          alt="Notepad"
-          style="
-            width: 32px;
-            height: 32px;
-            margin: 0 8px;
-            box-shadow: 0 2px 6px #0004;
-            border-radius: 4px;
-            background: #fff4;
-          "
-        />
-        <img
-          src="assets/win7_cmd_icon.webp"
-          alt="Cmd"
-          style="
-            width: 32px;
-            height: 32px;
-            margin: 0 8px;
-            box-shadow: 0 2px 6px #0004;
-            border-radius: 4px;
-            background: #fff4;
-          "
-        />
+        <img src="assets/win7_notepad_icon.webp" alt="Notepad" />
+        <img src="assets/win7_cmd_icon.webp" alt="Cmd" />
       </div>
       <div class="taskbar-clock" id="taskbarClock"></div>
     </div>
 
     <script src="./assets/util.js"></script>
     <script type="module" src="./assets/bucceolang.js"></script>
+    <script>
+      function showAboutDialog() {
+        document.getElementById("aboutDialog").style.display = "block";
+      }
+      function closeAboutDialog() {
+        document.getElementById("aboutDialog").style.display = "none";
+      }
+      document
+        .querySelector(".start-btn")
+        .addEventListener("click", showAboutDialog);
+    </script>
   </body>
 </html>

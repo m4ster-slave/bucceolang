@@ -1,17 +1,67 @@
-window.setExample = function (text) {
+window.setExample = function (example) {
+  let text = "";
+  switch (example) {
+    case 1:
+      text = 'print "Hello, world!";';
+      break;
+    case 2:
+      text = `
+fn greet(name) {
+  print "Hello, " + name + "!";
+}
+
+greet("Bucceolang");
+`.trim();
+      break;
+    case 3:
+      text = `
+for (var i = 1; i <= 5; i = i + 1) {
+  print i * i;
+}
+`.trim();
+      break;
+    case 4:
+      text = `
+class Person {
+  init(name) {
+    this.name = name;
+  }
+
+  greet() {
+    print "Hi, I'm " + this.name + ".";
+  }
+}
+
+var alice = Person("Alice");
+alice.greet();
+`.trim();
+      break;
+    default:
+      text = 'print "Invalid example selected.";';
+  }
   document.getElementById("editor").value = text;
 };
-
-document.getElementById("runMenu").addEventListener("click", (e) => {
-  e.preventDefault();
-  run();
-});
 
 function updateClock() {
   const now = new Date();
   const h = now.getHours().toString().padStart(2, "0");
   const m = now.getMinutes().toString().padStart(2, "0");
-  document.getElementById("taskbarClock").textContent = `${h}:${m}`;
+  const d = now.getDate().toString().padStart(2, "0");
+  const mo = (now.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
+  const y = now.getFullYear();
+
+  const time = `${h}:${m}`;
+  const date = `${d}/${mo}/${y}`;
+
+  const clockElement = document.getElementById("taskbarClock");
+  clockElement.textContent = `${time}\n${date}`;
+  clockElement.style.whiteSpace = "pre"; // Ensures that \n is rendered as a line break
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+document.getElementById("clearInput").addEventListener("click", (e) => {
+  e.preventDefault();
+
+  document.getElementById("editor").value = "";
+});
