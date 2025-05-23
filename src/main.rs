@@ -2,6 +2,7 @@ mod callable;
 mod environment;
 mod expr_types;
 mod function;
+mod integration_tests;
 mod interpreter;
 mod native_functions;
 mod object;
@@ -78,7 +79,6 @@ fn main() -> ExitCode {
 }
 
 fn run(source: &str) -> ExitCode {
-    // println!("\nRunning: {}", source);
     let tokens = match tokenize(source) {
         Ok(t) => t,
         Err(e) => {
