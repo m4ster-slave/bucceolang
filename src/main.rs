@@ -88,9 +88,11 @@ fn run(source: &str) -> ExitCode {
     };
     let mut stmts = match parse(tokens) {
         Ok(e) => e,
-        Err(_errors) => {
-            // TODO: think about the parser errors...
-            // for _error in errors {}
+        Err(errors) => {
+            eprintln!(
+                "\x1b[31;1;4mParser exited with {} error(s).\x1b[0m",
+                errors.len()
+            );
             return ExitCode::from(65);
         }
     };

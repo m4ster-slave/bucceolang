@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{token::TokenType, Token};
 
 /// Represents an error that occurred during the parsing phase.
@@ -47,4 +49,14 @@ pub fn error(token: &Token, message: String) -> ParseError {
     );
 
     error
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[line {}] Error {}: {}",
+            self.line, self.location, self.message
+        )
+    }
 }

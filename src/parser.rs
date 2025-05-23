@@ -856,14 +856,18 @@ pub fn parse(token_input: Vec<Token>) -> Result<Vec<Stmt>, Vec<ParseError>> {
         }
     }
 
-    Ok(stmts)
+    if parser.had_error {
+        Err(parser_errors)
+    } else {
+        Ok(stmts)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::expr_types::*;
     use crate::object::Object;
-    use crate::parser::{self, Parser};
+    use crate::parser;
     use crate::stmt_types::*;
     use crate::token::{Token, TokenType};
 

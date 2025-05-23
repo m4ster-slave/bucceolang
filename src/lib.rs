@@ -27,15 +27,18 @@ use wasm_bindgen::prelude::*;
 pub fn run(source: &str) -> String {
     let tokens = match tokenize(source) {
         Ok(t) => t,
-        Err(e) => {
-            eprintln!("{}", e);
-            return String::from("error");
-        }
+        Err(e) => return format!("{}", e),
     };
 
     let mut stmts = match parse(tokens) {
         Ok(s) => s,
-        Err(_errors) => return String::from("Parsing error"),
+        Err(errors) => {
+            return errors
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("\n")
+        }
     };
 
     let output: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
