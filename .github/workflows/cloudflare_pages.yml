@@ -1,0 +1,43 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and Deploy
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        target: wasm32-unknown-unknown
+
+    - name: Install wasm-pack
+      run: cargo install wasm-pack
+
+    - name: Build with wasm-pack
+      run: wasm-pack build --release --target web
+
+    - name: Copy static files to dist/
+      run: |
+        mkdir dist
+        cp index.html dist/
+        cp -r assets dist/assets
+        cp -r pkg dist/pkg
+
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/pages-action@v1
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        projectName: bucceolang
+        directory: dist
+        branch: main
