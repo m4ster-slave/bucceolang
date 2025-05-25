@@ -36,6 +36,36 @@ var alice = Person("Alice");
 alice.greet();
 `.trim();
       break;
+
+    case 5:
+      text = `
+fn makeCounter() {
+  var i = 0;
+  fn count() {
+    i = i + 1;
+    print i;
+  }
+  return count;
+}
+var counter = makeCounter();
+counter(); 
+counter();
+`.trim();
+      break;
+    case 6:
+      text = `
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+`.trim();
+      break;
     default:
       text = 'print "Invalid example selected.";';
   }
