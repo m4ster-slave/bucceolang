@@ -193,3 +193,82 @@ pub struct CallExpr {
     pub paren: Token,
     pub arguments: Vec<Expr>,
 }
+
+use std::hash::{Hash, Hasher};
+
+impl PartialEq for Expr {
+    fn eq(&self, other: &Self) -> bool {
+        use Expr::*;
+        match (self, other) {
+            (Literal(a), Literal(b)) => a.literal.literal() == b.literal.literal(),
+            (Grouping(a), Grouping(b)) => a.expr == b.expr,
+            (Unary(a), Unary(b)) => {
+                a.prefix.lexeme() == b.prefix.lexeme() && a.operator == b.operator
+            }
+            (Binary(a), Binary(b)) => {
+                a.left == b.left && a.right == b.right && a.operator.lexeme() == b.operator.lexeme()
+            }
+            (Variable(a), Variable(b)) => a.name.literal() == b.name.literal(),
+            (Assign(a), Assign(b)) => a.name.literal() == b.name.literal() && a.value == b.value,
+            (Logical(a), Logical(b)) => {
+                a.left == b.left && a.right == b.right && a.operator.lexeme() == b.operator.lexeme()
+            }
+            (Call(a), Call(b)) => {
+                a.callee == b.callee
+                    && a.arguments
+                        .iter()
+                        .zip(b.arguments.clone())
+                        .all(|(a_e, b_e)| *a_e == b_e)
+            }
+
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Expr {}
+
+impl Hash for Expr {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // hash the discriminant first to distinguish between variants
+        std::mem::discriminant(self).hash(state);
+
+        // then hash the actual data based on what PartialEq compares
+        match self {
+            Expr::Literal(expr) => {
+                expr.literal.lexeme().hash(state);
+            }
+            Expr::Grouping(expr) => {
+                expr.expr.hash(state);
+            }
+            Expr::Unary(expr) => {
+                expr.prefix.lexeme().hash(state);
+                expr.operator.hash(state);
+            }
+            Expr::Binary(expr) => {
+                expr.left.hash(state);
+                expr.right.hash(state);
+                expr.operator.lexeme().hash(state);
+            }
+            Expr::Variable(expr) => {
+                expr.name.lexeme().hash(state);
+                expr.name.line().hash(state);
+                expr.name.token_number().hash(state);
+            }
+            Expr::Assign(expr) => {
+                expr.name.lexeme().hash(state);
+            }
+            Expr::Logical(expr) => {
+                expr.left.hash(state);
+                expr.right.hash(state);
+                expr.operator.lexeme().hash(state);
+            }
+            Expr::Call(expr) => {
+                expr.callee.hash(state);
+                for arg in &expr.arguments {
+                    arg.hash(state);
+                }
+            }
+        }
+    }
+}

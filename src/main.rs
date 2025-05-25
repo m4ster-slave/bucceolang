@@ -8,6 +8,7 @@ mod native_functions;
 mod object;
 mod parser;
 mod parser_error;
+mod resolver;
 mod runtime_error;
 mod scanner;
 mod scanner_error;
@@ -16,6 +17,7 @@ mod token;
 
 use interpreter::Interpreter;
 use parser::parse;
+use resolver::Resolver;
 use scanner::tokenize;
 use token::Token;
 
@@ -98,6 +100,16 @@ fn run(source: &str) -> ExitCode {
     };
 
     let mut interpreter = Interpreter::new();
+
+    let mut resolver = Resolver::new(&mut interpreter);
+    match resolver.resolve(&mut stmts) {
+        Ok(_) => (),
+        Err(err) => {
+            eprintln!("\x1b[31;49;1mResolving Error: {}\x1b[0m", err);
+            return ExitCode::from(70);
+        }
+    };
+
     match interpreter.interprete(&mut stmts) {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {

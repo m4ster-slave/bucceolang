@@ -666,6 +666,7 @@ impl Parser {
                     "true",
                     Some(Object::Boolean(true)),
                     self.peek().line(),
+                    self.peek().token_number(),
                 ),
             })),
             body: Box::new(body),
@@ -873,7 +874,7 @@ mod tests {
 
     // Helper function to create tokens for testing
     fn token(token_type: TokenType, lexeme: &str, literal: Option<Object>, line: usize) -> Token {
-        Token::new(token_type, lexeme, literal, line)
+        Token::new(token_type, lexeme, literal, line, 0)
     }
 
     #[test]

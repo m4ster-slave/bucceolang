@@ -7,6 +7,7 @@ mod native_functions;
 mod object;
 mod parser;
 mod parser_error;
+mod resolver;
 mod runtime_error;
 mod scanner;
 mod scanner_error;
@@ -15,6 +16,7 @@ mod token;
 
 use interpreter::Interpreter;
 use parser::parse;
+use resolver::Resolver;
 use scanner::tokenize;
 use token::Token;
 
@@ -45,6 +47,13 @@ pub fn run(source: &str) -> String {
     let output_for_interp = output.clone();
 
     let mut interpreter = Interpreter::new_with_output(output_for_interp);
+
+    let mut resolver = Resolver::new(&mut interpreter);
+    match resolver.resolve(&mut stmts) {
+        Ok(_) => (),
+        Err(e) => return format!("{}", e),
+    };
+
     match interpreter.interprete(&mut stmts) {
         Ok(_) => (),
         Err(e) => return format!("{}", e),

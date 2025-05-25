@@ -31,54 +31,163 @@ use crate::{
 pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
     let mut out: Vec<Token> = Vec::new();
     let mut line_number: usize = 1;
+    let mut token_number: usize = 1;
 
     let mut chars = input.chars();
     while let Some(char) = chars.next() {
         match char {
-            '(' => out.push(Token::new(TokenType::LeftParen, "(", None, line_number)),
-            ')' => out.push(Token::new(TokenType::RightParen, ")", None, line_number)),
-            '{' => out.push(Token::new(TokenType::LeftBrace, "{", None, line_number)),
-            '}' => out.push(Token::new(TokenType::RightBrace, "}", None, line_number)),
-            ',' => out.push(Token::new(TokenType::Comma, ",", None, line_number)),
-            '.' => out.push(Token::new(TokenType::Dot, ".", None, line_number)),
-            '-' => out.push(Token::new(TokenType::Minus, "-", None, line_number)),
-            '+' => out.push(Token::new(TokenType::Plus, "+", None, line_number)),
-            ';' => out.push(Token::new(TokenType::Semicolon, ";", None, line_number)),
-            '*' => out.push(Token::new(TokenType::Asterisk, "*", None, line_number)),
+            '(' => out.push(Token::new(
+                TokenType::LeftParen,
+                "(",
+                None,
+                line_number,
+                token_number,
+            )),
+            ')' => out.push(Token::new(
+                TokenType::RightParen,
+                ")",
+                None,
+                line_number,
+                token_number,
+            )),
+            '{' => out.push(Token::new(
+                TokenType::LeftBrace,
+                "{",
+                None,
+                line_number,
+                token_number,
+            )),
+            '}' => out.push(Token::new(
+                TokenType::RightBrace,
+                "}",
+                None,
+                line_number,
+                token_number,
+            )),
+            ',' => out.push(Token::new(
+                TokenType::Comma,
+                ",",
+                None,
+                line_number,
+                token_number,
+            )),
+            '.' => out.push(Token::new(
+                TokenType::Dot,
+                ".",
+                None,
+                line_number,
+                token_number,
+            )),
+            '-' => out.push(Token::new(
+                TokenType::Minus,
+                "-",
+                None,
+                line_number,
+                token_number,
+            )),
+            '+' => out.push(Token::new(
+                TokenType::Plus,
+                "+",
+                None,
+                line_number,
+                token_number,
+            )),
+            ';' => out.push(Token::new(
+                TokenType::Semicolon,
+                ";",
+                None,
+                line_number,
+                token_number,
+            )),
+            '*' => out.push(Token::new(
+                TokenType::Asterisk,
+                "*",
+                None,
+                line_number,
+                token_number,
+            )),
             '!' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::new(TokenType::BangEqual, "!=", None, line_number));
+                    out.push(Token::new(
+                        TokenType::BangEqual,
+                        "!=",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::Bang, "!", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Bang,
+                        "!",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '=' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::new(TokenType::EqualEqual, "==", None, line_number));
+                    out.push(Token::new(
+                        TokenType::EqualEqual,
+                        "==",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::Equal, "=", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Equal,
+                        "=",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '<' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::new(TokenType::LessEqual, "<=", None, line_number));
+                    out.push(Token::new(
+                        TokenType::LessEqual,
+                        "<=",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::Less, "<", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Less,
+                        "<",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '>' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('=') {
-                    out.push(Token::new(TokenType::GreaterEqual, ">=", None, line_number));
+                    out.push(Token::new(
+                        TokenType::GreaterEqual,
+                        ">=",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::Greater, ">", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Greater,
+                        ">",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '/' => {
@@ -92,7 +201,13 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                         }
                     }
                 } else {
-                    out.push(Token::new(TokenType::Slash, "/", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Slash,
+                        "/",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '\n' => line_number += 1,
@@ -127,6 +242,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                                 &format!("\"{}\"", string_literal),
                                 value,
                                 line_number,
+                                token_number,
                             ));
                             break;
                         } else {
@@ -147,19 +263,43 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
             '&' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('&') {
-                    out.push(Token::new(TokenType::And, "&&", None, line_number));
+                    out.push(Token::new(
+                        TokenType::And,
+                        "&&",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::BitwiseAnd, "&", None, line_number));
+                    out.push(Token::new(
+                        TokenType::BitwiseAnd,
+                        "&",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '|' => {
                 let mut peek = chars.clone().peekable();
                 if peek.next() == Some('|') {
-                    out.push(Token::new(TokenType::Or, "||", None, line_number));
+                    out.push(Token::new(
+                        TokenType::Or,
+                        "||",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                     chars.next();
                 } else {
-                    out.push(Token::new(TokenType::BitwiseOr, "|", None, line_number));
+                    out.push(Token::new(
+                        TokenType::BitwiseOr,
+                        "|",
+                        None,
+                        line_number,
+                        token_number,
+                    ));
                 }
             }
             '0'..='9' => {
@@ -186,6 +326,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                     &number_literal,
                     value,
                     line_number,
+                    token_number,
                 ));
             }
             _ => {
@@ -202,34 +343,100 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                     }
 
                     match identifier.as_str() {
-                        "else" => out.push(Token::new(TokenType::Else, "else", None, line_number)),
+                        "else" => out.push(Token::new(
+                            TokenType::Else,
+                            "else",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         "false" => {
                             let value = Some(Object::Boolean(false));
-                            out.push(Token::new(TokenType::False, "false", value, line_number))
+                            out.push(Token::new(
+                                TokenType::False,
+                                "false",
+                                value,
+                                line_number,
+                                token_number,
+                            ))
                         }
-                        "for" => out.push(Token::new(TokenType::For, "for", None, line_number)),
-                        "fn" => out.push(Token::new(TokenType::Fn, "fn", None, line_number)),
-                        "if" => out.push(Token::new(TokenType::If, "if", None, line_number)),
+                        "for" => out.push(Token::new(
+                            TokenType::For,
+                            "for",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "fn" => out.push(Token::new(
+                            TokenType::Fn,
+                            "fn",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "if" => out.push(Token::new(
+                            TokenType::If,
+                            "if",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         "nil" => {
                             let value = Some(Object::Nil);
-                            out.push(Token::new(TokenType::Nil, "nil", value, line_number))
+                            out.push(Token::new(
+                                TokenType::Nil,
+                                "nil",
+                                value,
+                                line_number,
+                                token_number,
+                            ))
                         }
-                        "print" => {
-                            out.push(Token::new(TokenType::Print, "print", None, line_number))
-                        }
-                        "return" => {
-                            out.push(Token::new(TokenType::Return, "return", None, line_number))
-                        }
-                        "super" => {
-                            out.push(Token::new(TokenType::Super, "super", None, line_number))
-                        }
-                        "this" => out.push(Token::new(TokenType::This, "this", None, line_number)),
+                        "print" => out.push(Token::new(
+                            TokenType::Print,
+                            "print",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "return" => out.push(Token::new(
+                            TokenType::Return,
+                            "return",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "super" => out.push(Token::new(
+                            TokenType::Super,
+                            "super",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "this" => out.push(Token::new(
+                            TokenType::This,
+                            "this",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         "true" => {
                             let value = Some(Object::Boolean(true));
-                            out.push(Token::new(TokenType::True, "true", value, line_number))
+                            out.push(Token::new(
+                                TokenType::True,
+                                "true",
+                                value,
+                                line_number,
+                                token_number,
+                            ))
                         }
                         "var" => {
-                            out.push(Token::new(TokenType::VarKeyword, "var", None, line_number));
+                            out.push(Token::new(
+                                TokenType::VarKeyword,
+                                "var",
+                                None,
+                                line_number,
+                                token_number,
+                            ));
 
                             let mut var = String::new();
                             //skip whitespace to find variable name
@@ -266,7 +473,13 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                                         ));
                                     }
 
-                                    out.push(Token::new(TokenType::Var, &var, None, line_number));
+                                    out.push(Token::new(
+                                        TokenType::Var,
+                                        &var,
+                                        None,
+                                        line_number,
+                                        token_number,
+                                    ));
                                 } else {
                                     return Err(ScannerError::InvalidVariableName(
                                         line_number,
@@ -283,14 +496,28 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                                 ));
                             }
                         }
-                        "while" => {
-                            out.push(Token::new(TokenType::While, "while", None, line_number))
-                        }
-                        "class" => {
-                            out.push(Token::new(TokenType::Class, "class", None, line_number))
-                        }
+                        "while" => out.push(Token::new(
+                            TokenType::While,
+                            "while",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "class" => out.push(Token::new(
+                            TokenType::Class,
+                            "class",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         _ => {
-                            out.push(Token::new(TokenType::Var, &identifier, None, line_number));
+                            out.push(Token::new(
+                                TokenType::Var,
+                                &identifier,
+                                None,
+                                line_number,
+                                token_number,
+                            ));
                         }
                     }
                 } else {
@@ -312,8 +539,15 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                 }
             }
         }
+        token_number += 1;
     }
-    out.push(Token::new(TokenType::Eof, "", None, line_number));
+    out.push(Token::new(
+        TokenType::Eof,
+        "",
+        None,
+        line_number,
+        token_number,
+    ));
 
     Ok(out)
 }

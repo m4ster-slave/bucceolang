@@ -8,8 +8,10 @@ use crate::runtime_error::RuntimeError;
 use crate::stmt_types::StmtVisitor;
 use crate::stmt_types::*;
 use crate::token::TokenType;
+use crate::Token;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::io::Write;
 use std::rc::Rc;
 
@@ -22,6 +24,8 @@ pub struct Interpreter {
     pub environment: Rc<RefCell<Environment>>,
     /// holds the outermost global environment
     pub globals: Rc<RefCell<Environment>>,
+    ///
+    pub locals: HashMap<Expr, usize>,
     /// output destination for print statements
     pub output: Rc<RefCell<dyn Write>>,
 }
@@ -195,14 +199,20 @@ impl ExprVisitor<Object> for Interpreter {
     }
 
     fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Object, RuntimeError> {
-        self.environment.borrow().get(&expr.name)
+        self.look_up_variable(&expr.name, Expr::Variable(expr.clone()))
     }
 
     fn visit_assign_expr(&mut self, expr: &mut AssignExpr) -> Result<Object, RuntimeError> {
         let val = expr.value.accept(self)?;
-        self.environment
-            .borrow_mut()
-            .assign(expr.name.clone(), val.clone())?;
+
+        if let Some(distance) = self.locals.get(&Expr::Assign(expr.clone())) {
+            self.environment
+                .borrow_mut()
+                .assign_at(distance, expr.name.clone(), val.clone())?;
+        } else {
+            self.globals.borrow_mut().assign(&expr.name, &val)?;
+        }
+
         Ok(val)
     }
 
@@ -393,7 +403,22 @@ impl Interpreter {
         Interpreter {
             environment: globals.to_owned(),
             globals,
+            locals: HashMap::new(),
             output,
+        }
+    }
+
+    pub fn resolve(&mut self, expr: Expr, depth: usize) {
+        self.locals.insert(expr, depth);
+    }
+
+    fn look_up_variable(&mut self, name: &Token, expr: Expr) -> Result<Object, RuntimeError> {
+        if let Some(distance) = self.locals.get(&expr) {
+            self.environment
+                .borrow()
+                .get_at(distance, name.lexeme().to_owned())
+        } else {
+            self.globals.borrow().get(name)
         }
     }
 
@@ -438,6 +463,7 @@ mod tests {
             &value.to_string(),
             Some(Object::Number(value)),
             line,
+            0,
         )
     }
 
@@ -447,6 +473,7 @@ mod tests {
             &value.clone(),
             Some(Object::String(value)),
             line,
+            0,
         )
     }
 
@@ -498,14 +525,20 @@ mod tests {
         let mut interpreter = Interpreter::new();
 
         // Test true
-        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
+        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1, 0);
         let mut expr = create_literal_expr(true_token);
         let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(true));
 
         // Test false
-        let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
+        let false_token = Token::new(
+            TokenType::False,
+            "false",
+            Some(Object::Boolean(false)),
+            1,
+            0,
+        );
         let mut expr = create_literal_expr(false_token);
         let result = expr.accept(&mut interpreter);
         assert!(result.is_ok());
@@ -515,7 +548,7 @@ mod tests {
     #[test]
     fn test_literal_nil() {
         let mut interpreter = Interpreter::new();
-        let nil_token = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 1);
+        let nil_token = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 1, 0);
         let mut expr = create_literal_expr(nil_token);
 
         let result = expr.accept(&mut interpreter);
@@ -529,8 +562,8 @@ mod tests {
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
-        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
-        let right_paren = Token::new(TokenType::RightParen, ")", None, 1);
+        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1, 0);
+        let right_paren = Token::new(TokenType::RightParen, ")", None, 1, 0);
         let mut expr = Expr::Grouping(GroupingExpr {
             _paren_open: left_paren,
             expr: Box::new(number_expr),
@@ -548,7 +581,7 @@ mod tests {
         let number_token = create_number_token(42.0, 1);
         let number_expr = create_literal_expr(number_token);
 
-        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1, 0);
         let mut expr = Expr::Unary(UnaryExpr {
             prefix: minus_token,
             operator: Box::new(number_expr),
@@ -564,9 +597,9 @@ mod tests {
         let mut interpreter = Interpreter::new();
 
         // Test !true -> false
-        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1);
+        let true_token = Token::new(TokenType::True, "true", Some(Object::Boolean(true)), 1, 0);
         let true_expr = create_literal_expr(true_token);
-        let bang_token = Token::new(TokenType::Bang, "!", None, 1);
+        let bang_token = Token::new(TokenType::Bang, "!", None, 1, 0);
         let mut expr = Expr::Unary(UnaryExpr {
             prefix: bang_token.clone(),
             operator: Box::new(true_expr),
@@ -577,7 +610,13 @@ mod tests {
         assert_eq!(result.unwrap(), Object::Boolean(false));
 
         // Test !false -> true
-        let false_token = Token::new(TokenType::False, "false", Some(Object::Boolean(false)), 1);
+        let false_token = Token::new(
+            TokenType::False,
+            "false",
+            Some(Object::Boolean(false)),
+            1,
+            0,
+        );
         let false_expr = create_literal_expr(false_token);
         let mut expr = Expr::Unary(UnaryExpr {
             prefix: bang_token,
@@ -598,7 +637,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token);
-        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -620,7 +659,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token);
-        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -642,7 +681,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token);
-        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
+        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -664,7 +703,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token);
-        let slash_token = Token::new(TokenType::Slash, "/", None, 1);
+        let slash_token = Token::new(TokenType::Slash, "/", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -686,7 +725,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_number_token(0.0, 1);
         let right_expr = create_literal_expr(right_token);
-        let slash_token = Token::new(TokenType::Slash, "/", None, 1);
+        let slash_token = Token::new(TokenType::Slash, "/", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -707,7 +746,7 @@ mod tests {
         let left_expr = create_literal_expr(left_token);
         let right_token = create_string_token(" world".to_string(), 1);
         let right_expr = create_literal_expr(right_token);
-        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -730,7 +769,7 @@ mod tests {
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token.clone());
 
-        let greater_token = Token::new(TokenType::Greater, ">", None, 1);
+        let greater_token = Token::new(TokenType::Greater, ">", None, 1, 0);
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: greater_token,
@@ -744,7 +783,7 @@ mod tests {
         // Test 3 < 5 = true
         let left_expr = create_literal_expr(right_token);
         let right_expr = create_literal_expr(left_token);
-        let less_token = Token::new(TokenType::Less, "<", None, 1);
+        let less_token = Token::new(TokenType::Less, "<", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -767,7 +806,7 @@ mod tests {
         let right_token = create_number_token(5.0, 1);
         let right_expr = create_literal_expr(right_token);
 
-        let eq_token = Token::new(TokenType::EqualEqual, "==", None, 1);
+        let eq_token = Token::new(TokenType::EqualEqual, "==", None, 1, 0);
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
             operator: eq_token,
@@ -782,7 +821,7 @@ mod tests {
         let right_token = create_number_token(3.0, 1);
         let right_expr = create_literal_expr(right_token);
         let left_expr = create_literal_expr(left_token);
-        let neq_token = Token::new(TokenType::BangEqual, "!=", None, 1);
+        let neq_token = Token::new(TokenType::BangEqual, "!=", None, 1, 0);
 
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(left_expr),
@@ -807,22 +846,22 @@ mod tests {
         let two_token = create_number_token(2.0, 1);
         let two_expr = create_literal_expr(two_token);
 
-        let plus_token = Token::new(TokenType::Plus, "+", None, 1);
+        let plus_token = Token::new(TokenType::Plus, "+", None, 1, 0);
         let addition = Expr::Binary(BinaryExpr {
             left: Box::new(five_expr),
             operator: plus_token,
             right: Box::new(three_expr),
         });
 
-        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1);
-        let right_paren = Token::new(TokenType::RightParen, "(", None, 1);
+        let left_paren = Token::new(TokenType::LeftParen, "(", None, 1, 0);
+        let right_paren = Token::new(TokenType::RightParen, "(", None, 1, 0);
         let grouping = Expr::Grouping(GroupingExpr {
             _paren_open: left_paren,
             expr: Box::new(addition),
             _paren_close: right_paren,
         });
 
-        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1);
+        let asterisk_token = Token::new(TokenType::Asterisk, "*", None, 1, 0);
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(grouping),
             operator: asterisk_token,
@@ -844,7 +883,7 @@ mod tests {
         let number_token = create_number_token(5.0, 1);
         let number_expr = create_literal_expr(number_token);
 
-        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1, 0);
         let mut expr = Expr::Binary(BinaryExpr {
             left: Box::new(string_expr),
             operator: minus_token,
@@ -858,7 +897,7 @@ mod tests {
         let string_token = create_string_token("string".to_string(), 1);
         let string_expr = create_literal_expr(string_token);
 
-        let minus_token = Token::new(TokenType::Minus, "-", None, 1);
+        let minus_token = Token::new(TokenType::Minus, "-", None, 1, 0);
         let mut expr = Expr::Unary(UnaryExpr {
             prefix: minus_token,
             operator: Box::new(string_expr),

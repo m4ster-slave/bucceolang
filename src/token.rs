@@ -71,6 +71,7 @@ pub struct Token {
     literal: Option<crate::object::Object>,
     /// The line number in the input where this token was found.
     line: usize,
+    token_number: usize,
 }
 
 impl Token {
@@ -87,12 +88,14 @@ impl Token {
         lexeme: &str,
         literal: Option<crate::object::Object>,
         line: usize,
+        token_number: usize,
     ) -> Token {
         Token {
             token_type,
             lexeme: lexeme.to_string(),
             literal,
             line,
+            token_number,
         }
     }
 
@@ -104,6 +107,11 @@ impl Token {
     /// Returns the line number where the token was found.
     pub fn line(&self) -> usize {
         self.line
+    }
+
+    /// Returns the token number where the token was found.
+    pub fn token_number(&self) -> usize {
+        self.token_number
     }
 
     /// Returns a string slice representing the token's lexeme.
@@ -130,7 +138,7 @@ mod test {
     use super::*;
     #[test]
     fn test_token() {
-        let t = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 0);
+        let t = Token::new(TokenType::Nil, "nil", Some(Object::Nil), 0, 10);
         assert_eq!(t.line(), 0);
         assert_eq!(t.lexeme(), "nil");
         assert_eq!(*t.token_type(), TokenType::Nil);

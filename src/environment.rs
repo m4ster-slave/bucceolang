@@ -7,12 +7,12 @@ use std::rc::Rc;
 /// Represents a variable environment (scope) for the interpreter.
 ///
 /// Stores variable bindings and supports lexical scoping via an optional enclosing environment.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Environment {
     /// Optional reference to the enclosing (parent) environment
     enclosing: Option<Rc<RefCell<Environment>>>,
     /// Mapping of variable names to their values in the current scope
-    values: HashMap<String, Object>,
+    pub values: HashMap<String, Object>,
 }
 
 impl Environment {
@@ -98,6 +98,99 @@ impl Environment {
             },
         }
     }
+    pub fn get_at(&self, distance: &usize, name: String) -> Result<Object, RuntimeError> {
+        if *distance == 0 {
+            match self.values.get(&name) {
+                None => Err(RuntimeError::UndefinedVariable(
+                    0,
+                    format!(
+                        "Variable 1 \"{}\" cannot be resolved at the specified location",
+                        name
+                    ),
+                )),
+                Some(obj) => Ok(obj.clone()),
+            }
+        } else {
+            match self.ancestors(distance) {
+                Some(env) => match env.borrow().values.get(&name) {
+                    None => Err(RuntimeError::UndefinedVariable(
+                        0,
+                        format!(
+                            "Variable 2 \"{}\" cannot be resolved at the specified location",
+                            name
+                        ),
+                    )),
+                    Some(obj) => Ok(obj.clone()),
+                },
+                None => Err(RuntimeError::UndefinedVariable(
+                    0,
+                    format!(
+                        "Variable 3 \"{}\" cannot be resolved at the specified location",
+                        name
+                    ),
+                )),
+            }
+        }
+    }
+
+    pub fn assign_at(
+        &mut self,
+        distance: &usize,
+        name: Token,
+        value: Object,
+    ) -> Result<Object, RuntimeError> {
+        if *distance == 0 {
+            if !self.values.contains_key(name.lexeme()) {
+                return Err(RuntimeError::UndefinedVariable(
+                    name.line(),
+                    format!("Undefined variable '{}'", name.lexeme()),
+                ));
+            }
+            let old_value = self.values.insert(name.lexeme().to_owned(), value);
+            Ok(old_value.unwrap_or(Object::Nil))
+        } else {
+            // Handle ancestor environments
+            match self.ancestors(distance) {
+                Some(env) => match env
+                    .borrow_mut()
+                    .values
+                    .insert(name.lexeme().to_owned(), value)
+                {
+                    Some(old_value) => Ok(old_value),
+                    None => Err(RuntimeError::UndefinedVariable(
+                        name.line(),
+                        format!(
+                            "Variable \"{}\" cannot be resolved at the specified location",
+                            name.lexeme()
+                        ),
+                    )),
+                },
+                None => Err(RuntimeError::UndefinedVariable(
+                    name.line(),
+                    format!(
+                        "Variable \"{}\" cannot be resolved at the specified location",
+                        name.lexeme()
+                    ),
+                )),
+            }
+        }
+    }
+
+    fn ancestors(&self, distance: &usize) -> Option<Rc<RefCell<Environment>>> {
+        if *distance == 0 {
+            return None;
+        }
+
+        let mut current = self.enclosing.clone();
+
+        for _ in 1..*distance {
+            current = match current {
+                Some(ref env) => env.borrow().enclosing.clone(),
+                None => return None,
+            }
+        }
+        current
+    }
 
     /// Assigns a new value to an existing variable in the environment chain.
     ///
@@ -113,9 +206,9 @@ impl Environment {
     ///
     /// `Ok(())` if the assignment was successful,
     /// or a RuntimeError if the variable is not defined in any accessible scope
-    pub fn assign(&mut self, name: Token, value: Object) -> Result<(), RuntimeError> {
+    pub fn assign(&mut self, name: &Token, value: &Object) -> Result<(), RuntimeError> {
         if self.values.contains_key(name.lexeme()) {
-            self.values.insert(name.lexeme().to_owned(), value);
+            self.values.insert(name.lexeme().to_owned(), value.clone());
             Ok(())
         } else if let Some(ref parent) = self.enclosing {
             parent.borrow_mut().assign(name, value)

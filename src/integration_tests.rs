@@ -2,6 +2,7 @@
 mod test {
     use crate::interpreter::Interpreter;
     use crate::parser::parse;
+    use crate::resolver::Resolver;
     use crate::scanner::tokenize;
 
     use std::{cell::RefCell, rc::Rc, str};
@@ -26,6 +27,8 @@ mod test {
         let output_for_interp = output.clone();
 
         let mut interpreter = Interpreter::new_with_output(output_for_interp);
+        let mut resolver = Resolver::new(&mut interpreter);
+        resolver.resolve(&mut stmts).expect("Resolving failed");
 
         let interpreter_result = interpreter.interprete(&mut stmts);
         assert!(

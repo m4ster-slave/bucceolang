@@ -24,6 +24,7 @@ pub enum RuntimeError {
     /// special error type thats used to propagate the the return value of functions thru the
     /// callstack, it gets caught by the 'Call()' function
     Return(Object),
+    Resolver(usize, String),
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -47,6 +48,11 @@ impl std::fmt::Display for RuntimeError {
             RuntimeError::Other(line, msg) => write!(
                 f,
                 "\x1b[31;49;1m[line: {}] Runtime Error: {}\x1b[0m",
+                line, msg
+            ),
+            RuntimeError::Resolver(line, msg) => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Resolver Error: {}\x1b[0m",
                 line, msg
             ),
             _ => write!(f, "\x1b[31;49;1mshould be a error\x1b[0m"),
