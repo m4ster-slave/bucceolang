@@ -2,7 +2,7 @@ use crate::callable::CallableObject;
 use crate::environment::Environment;
 use crate::expr_types::*;
 use crate::function::Function;
-use crate::native_functions::{ClockFn, RandomFn, ReadFn};
+use crate::native_functions::*;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::stmt_types::StmtVisitor;
@@ -399,6 +399,19 @@ impl Interpreter {
                 Object::Callable(CallableObject::RandomFn(RandomFn)),
             )
             .expect("Failed to define native function 'random'");
+
+        globals
+            .borrow_mut()
+            .define("sin".into(), Object::Callable(CallableObject::SinFn(SinFn)))
+            .expect("Failed to define native function 'sin'");
+
+        globals
+            .borrow_mut()
+            .define(
+                "sqrt".into(),
+                Object::Callable(CallableObject::SqrtFn(SqrtFn)),
+            )
+            .expect("Failed to define native function 'sqrt'");
 
         Interpreter {
             environment: globals.to_owned(),

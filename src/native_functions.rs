@@ -149,3 +149,66 @@ impl RandomFn {
         String::from("<native fn random>")
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct SinFn;
+impl SinFn {
+    pub fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        mut arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let arg = arguments.pop().ok_or_else(|| {
+            RuntimeError::Other(
+                0,
+                format!("not enough arguments in function {}", self.to_string()),
+            )
+        })?;
+
+        if let Object::Number(num) = arg {
+            // sin is rad
+            Ok(Object::Number(num.sin()))
+        } else {
+            Err(RuntimeError::Other(0, "argument must be a number".into()))
+        }
+    }
+
+    pub fn arity(&self) -> usize {
+        1
+    }
+
+    pub fn to_string(&self) -> String {
+        String::from("<native fn sin>")
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct SqrtFn;
+impl SqrtFn {
+    pub fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        mut arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let arg = arguments.pop().ok_or_else(|| {
+            RuntimeError::Other(
+                0,
+                format!("not enough arguments in function {}", self.to_string()),
+            )
+        })?;
+
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.sqrt()))
+        } else {
+            Err(RuntimeError::Other(0, "argument must be a number".into()))
+        }
+    }
+
+    pub fn arity(&self) -> usize {
+        1
+    }
+
+    pub fn to_string(&self) -> String {
+        String::from("<native fn sqrt>")
+    }
+}

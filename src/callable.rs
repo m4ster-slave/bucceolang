@@ -1,5 +1,5 @@
 use crate::function::Function;
-use crate::native_functions::{ClockFn, RandomFn, ReadFn};
+use crate::native_functions::{ClockFn, RandomFn, ReadFn, SinFn, SqrtFn};
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::Interpreter;
@@ -21,6 +21,9 @@ pub enum CallableObject {
     ReadFn(ReadFn),
     /// A native function that returns a random value
     RandomFn(RandomFn),
+
+    SinFn(SinFn),
+    SqrtFn(SqrtFn),
 }
 
 impl CallableObject {
@@ -34,6 +37,8 @@ impl CallableObject {
             CallableObject::ClockFn(nf) => nf.arity(),
             CallableObject::ReadFn(nf) => nf.arity(),
             CallableObject::RandomFn(nf) => nf.arity(),
+            CallableObject::SinFn(nf) => nf.arity(),
+            CallableObject::SqrtFn(nf) => nf.arity(),
         }
     }
 
@@ -58,6 +63,8 @@ impl CallableObject {
             CallableObject::ClockFn(nf) => nf.call(interp, args),
             CallableObject::ReadFn(nf) => nf.call(interp, args),
             CallableObject::RandomFn(nf) => nf.call(interp, args),
+            CallableObject::SinFn(nf) => nf.call(interp, args),
+            CallableObject::SqrtFn(nf) => nf.call(interp, args),
         }
     }
 }
