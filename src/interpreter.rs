@@ -117,12 +117,33 @@ impl ExprVisitor<Object> for Interpreter {
                 (Object::Number(left_val), Object::Number(right_val)) => {
                     Ok(Object::Number(left_val + right_val))
                 }
-                (Object::String(left_val), Object::String(right_val)) => {
+                // String + anything = concatenation
+                (Object::String(left_val), right_val) => {
+                    Ok(Object::String(format!("{}{}", left_val, right_val)))
+                }
+                // Anything + String = concatenation
+                (left_val, Object::String(right_val)) => {
                     Ok(Object::String(format!("{}{}", left_val, right_val)))
                 }
                 _ => Err(RuntimeError::TypeError(
                     expr.operator.line(),
-                    "Operands must be two numbers or two strings".to_string(),
+                    format!(
+                        "Cannot add {} and {}",
+                        match left {
+                            Object::Nil => "nil",
+                            Object::Boolean(_) => "boolean",
+                            Object::Number(_) => "number",
+                            Object::String(_) => "string",
+                            Object::Callable(_) => "callable",
+                        },
+                        match right {
+                            Object::Nil => "nil",
+                            Object::Boolean(_) => "boolean",
+                            Object::Number(_) => "number",
+                            Object::String(_) => "string",
+                            Object::Callable(_) => "callable",
+                        }
+                    ),
                 )),
             },
             TokenType::Slash => {
