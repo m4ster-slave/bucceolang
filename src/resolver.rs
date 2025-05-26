@@ -5,6 +5,11 @@ use crate::{
     token::Token, Interpreter,
 };
 
+/// The `Resolver` is responsible for performing static analysis on the AST to resolve variable scopes and ensure correct variable usage before interpretation.
+///
+/// It tracks variable declarations and definitions in nested scopes using a stack of hash maps, and communicates scope distances to the interpreter for efficient variable lookup at runtime.
+///
+/// The resolver also detects errors such as reading a variable in its own initializer and helps enforce language scoping rules.
 pub struct Resolver<'a> {
     interpreter: &'a mut Interpreter,
     /// we use this vector as stack here with push() and pop()
@@ -156,16 +161,23 @@ impl Resolver<'_> {
         expr.accept(self)
     }
 
+    /// Begins a new variable scope by pushing a new HashMap onto the scope stack.
     fn begin_scope(&mut self) -> Result<(), RuntimeError> {
         self.scopes.push(HashMap::new());
         Ok(())
     }
 
+    /// Ends the current variable scope by popping the last HashMap from the scope stack.
     fn end_scope(&mut self) -> Result<(), RuntimeError> {
         self.scopes.pop();
         Ok(())
     }
 
+    /// Declares a variable in the current scope.
+    ///
+    /// # Arguments
+    /// * `name` - The token representing the variable name.
+    /// * `defined` - Whether the variable has been fully defined (initialized).
     fn declare(&mut self, name: &Token, defined: bool) -> Result<(), RuntimeError> {
         match self.scopes.last_mut() {
             // last_mut() only ever returns none if the Vec is empty
@@ -177,6 +189,11 @@ impl Resolver<'_> {
         Ok(())
     }
 
+    /// Resolves a variable reference to its scope distance and informs the interpreter.
+    ///
+    /// # Arguments
+    /// * `expr` - The expression referencing the variable.
+    /// * `name` - The token representing the variable name.
     fn resolve_local(&mut self, expr: Expr, name: &Token) -> Result<(), RuntimeError> {
         if let Some(distance) = self
             .scopes

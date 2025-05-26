@@ -150,6 +150,21 @@ impl RandomFn {
     }
 }
 
+/// Returns the sine of a number (in radians).
+///
+/// # Usage
+/// ```bucceolang
+/// var s = sin(3.1415); // s will be approximately 0.0
+/// ```
+///
+/// # Arguments
+/// - `num` (`Number`): The value (in radians) whose sine is to be calculated.
+///
+/// # Returns
+/// - `Number`: The sine of the input value.
+///
+/// # Errors
+/// - If the argument is not a number, a runtime error is returned.
 #[derive(Clone, Debug)]
 pub struct SinFn;
 impl SinFn {
@@ -182,6 +197,21 @@ impl SinFn {
     }
 }
 
+/// Returns the square root of a number.
+///
+/// # Usage
+/// ```bucceolang
+/// var r = sqrt(9); // r will be 3.0
+/// ```
+///
+/// # Arguments
+/// - `num` (`Number`): The value whose square root is to be calculated.
+///
+/// # Returns
+/// - `Number`: The square root of the input value.
+///
+/// # Errors
+/// - If the argument is not a number, a runtime error is returned.
 #[derive(Clone, Debug)]
 pub struct SqrtFn;
 impl SqrtFn {

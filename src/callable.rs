@@ -21,7 +21,6 @@ pub enum CallableObject {
     ReadFn(ReadFn),
     /// A native function that returns a random value
     RandomFn(RandomFn),
-
     SinFn(SinFn),
     SqrtFn(SqrtFn),
 }
