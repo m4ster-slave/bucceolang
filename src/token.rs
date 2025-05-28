@@ -50,6 +50,8 @@ pub enum TokenType {
     True,
     VarKeyword, // Represents the 'var' keyword specifically when used for declaration
     While,
+    Break,
+    Continue,
     Class,
 
     // Identifier

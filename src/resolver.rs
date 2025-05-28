@@ -17,6 +17,7 @@ pub struct Resolver<'a> {
     /// The value associated with a key in the scope map represents
     /// whether or not we have finished resolving that variable’s initializer.
     scopes: Vec<HashMap<String, bool>>,
+    loop_depth: usize,
 }
 
 impl Resolver<'_> {
@@ -24,6 +25,7 @@ impl Resolver<'_> {
         Resolver {
             interpreter,
             scopes: Vec::new(),
+            loop_depth: 0,
         }
     }
 }
@@ -80,7 +82,32 @@ impl StmtVisitor<()> for Resolver<'_> {
 
     fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<(), RuntimeError> {
         self.resolve_expr(&mut stmt.condition)?;
-        self.resolve_stmt(&mut stmt.body)
+        self.loop_depth += 1;
+        self.resolve_stmt(&mut stmt.body)?;
+        self.loop_depth -= 1;
+        Ok(())
+    }
+
+    fn visit_continue_stmt(&mut self) -> Result<(), RuntimeError> {
+        if self.loop_depth == 0 {
+            Err(RuntimeError::Other(
+                0,
+                "Cannot use 'continue' outside of a loop.".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn visit_break_stmt(&mut self) -> Result<(), RuntimeError> {
+        if self.loop_depth == 0 {
+            Err(RuntimeError::Other(
+                0,
+                "Cannot use 'break' outside of a loop.".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
     }
 }
 

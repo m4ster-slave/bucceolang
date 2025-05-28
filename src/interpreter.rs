@@ -337,7 +337,12 @@ impl StmtVisitor<()> for Interpreter {
 
     fn visit_while_stmt(&mut self, stmt: &mut WhileStmt) -> Result<(), RuntimeError> {
         while is_truthy(&stmt.condition.accept(self)?) {
-            stmt.body.evaluate(self)?;
+            match stmt.body.evaluate(self) {
+                Ok(_) => {}
+                Err(RuntimeError::Continue) => continue,
+                Err(RuntimeError::Break) => break,
+                Err(e) => return Err(e),
+            }
         }
 
         Ok(())
@@ -363,6 +368,14 @@ impl StmtVisitor<()> for Interpreter {
         };
 
         Err(RuntimeError::Return(value.unwrap()))
+    }
+
+    fn visit_break_stmt(&mut self) -> Result<(), RuntimeError> {
+        Err(RuntimeError::Break)
+    }
+
+    fn visit_continue_stmt(&mut self) -> Result<(), RuntimeError> {
+        Err(RuntimeError::Continue)
     }
 }
 

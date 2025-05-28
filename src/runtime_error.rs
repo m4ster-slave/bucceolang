@@ -24,6 +24,8 @@ pub enum RuntimeError {
     /// special error type thats used to propagate the the return value of functions thru the
     /// callstack, it gets caught by the 'Call()' function
     Return(Object),
+    Break,
+    Continue,
     Resolver(usize, String),
 }
 

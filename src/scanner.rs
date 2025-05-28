@@ -405,6 +405,20 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                             line_number,
                             token_number,
                         )),
+                        "break" => out.push(Token::new(
+                            TokenType::Break,
+                            "return",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
+                        "continue" => out.push(Token::new(
+                            TokenType::Continue,
+                            "return",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         "super" => out.push(Token::new(
                             TokenType::Super,
                             "super",
@@ -951,5 +965,15 @@ mod tests {
             }
             _ => panic!("Expected InvalidVariableName error"),
         }
+    }
+
+    #[test]
+    fn test_break_and_continue() {
+        let input = "break continue";
+        let tokens = tokenize(input).unwrap();
+        assert_eq!(tokens.len(), 3);
+
+        assert!(matches!(tokens[0].token_type(), TokenType::Break),);
+        assert!(matches!(tokens[1].token_type(), TokenType::Continue));
     }
 }

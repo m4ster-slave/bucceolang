@@ -217,4 +217,99 @@ mod test {
 
         assert_eq!(result, "ARGUMENT\n");
     }
+
+    #[test]
+    fn test_break_continue() {
+        let source = r#"
+            var i = 0;
+            while(true) {
+              i = i + 1;
+              
+              if (i == 1) {
+                continue;
+              }
+              if (i == 3) {
+                continue;
+              }
+              if ( i > 5) {
+                break;
+              }
+
+                print i;
+
+            }
+
+            print "broken";
+        "#;
+
+        let tokens = tokenize(source).expect("Tokenization failed");
+        let mut stmts = parse(tokens).expect("Parsing failed");
+
+        let output: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
+        let output_for_interp = output.clone();
+
+        let mut interpreter = Interpreter::new_with_output(output_for_interp);
+        let mut resolver = Resolver::new(&mut interpreter);
+        resolver.resolve(&mut stmts).expect("Resolving failed");
+
+        let interpreter_result = interpreter.interprete(&mut stmts);
+        assert!(
+            interpreter_result.is_ok(),
+            "Interpreter failed: {:?}",
+            interpreter_result.err()
+        );
+        match interpreter_result {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        };
+
+        let bytes: std::cell::Ref<'_, Vec<u8>> = output.borrow();
+        let result = match str::from_utf8(&bytes) {
+            Ok(v) => v.to_owned(),
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+
+        assert_eq!(result, "2\n4\n5\nbroken\n");
+    }
+
+    #[test]
+    fn test_if_inside_for() {
+        let source = r#"
+        for(var i = 0; i < 5; i = i + 1) {
+            if (i == 3) {
+                print "PASSED";
+            }
+
+        }
+        "#;
+
+        let tokens = tokenize(source).expect("Tokenization failed");
+        let mut stmts = parse(tokens).expect("Parsing failed");
+
+        let output: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
+        let output_for_interp = output.clone();
+
+        let mut interpreter = Interpreter::new_with_output(output_for_interp);
+        let mut resolver = Resolver::new(&mut interpreter);
+        resolver.resolve(&mut stmts).expect("Resolving failed");
+
+        let interpreter_result = interpreter.interprete(&mut stmts);
+        assert!(
+            interpreter_result.is_ok(),
+            "Interpreter failed: {:?}",
+            interpreter_result.err()
+        );
+        match interpreter_result {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        };
+
+        let bytes: std::cell::Ref<'_, Vec<u8>> = output.borrow();
+        let result = match str::from_utf8(&bytes) {
+            Ok(v) => v.to_owned(),
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+
+        assert_eq!(result, "PASSED\n");
+    }
 }

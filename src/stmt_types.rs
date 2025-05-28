@@ -22,6 +22,8 @@ pub enum Stmt {
     Function(FunctionStmt),
     /// Represents a return statement.
     Return(ReturnStmt),
+    Break,
+    Continue,
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -48,6 +50,8 @@ pub trait StmtVisitor<T> {
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<T, RuntimeError>;
     /// Visits a return statement.
     fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<T, RuntimeError>;
+    fn visit_break_stmt(&mut self) -> Result<T, RuntimeError>;
+    fn visit_continue_stmt(&mut self) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -62,6 +66,8 @@ impl Stmt {
             Stmt::While(while_stmt) => visitor.visit_while_stmt(while_stmt),
             Stmt::Function(function_stmt) => visitor.visit_function_stmt(function_stmt),
             Stmt::Return(return_stmt) => visitor.visit_return_stmt(return_stmt),
+            Stmt::Break => visitor.visit_break_stmt(),
+            Stmt::Continue => visitor.visit_continue_stmt(),
         }
     }
 }

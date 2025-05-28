@@ -510,8 +510,22 @@ impl Parser {
             TokenType::While => self.while_statment(),
             TokenType::For => self.for_statement(),
             TokenType::Return => self.return_statement(),
+            TokenType::Break => self.break_statement(),
+            TokenType::Continue => self.continue_statement(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn break_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.advance();
+        self.consume(TokenType::Semicolon, "Expect ';' after break.")?;
+        Ok(Stmt::Break)
+    }
+
+    fn continue_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.advance();
+        self.consume(TokenType::Semicolon, "Expect ';' after continue.")?;
+        Ok(Stmt::Continue)
     }
 
     fn return_statement(&mut self) -> Result<Stmt, ParseError> {
