@@ -37,7 +37,11 @@ impl ClassObject {
 // callable
 impl ClassObject {
     pub fn arity(&self) -> usize {
-        0
+        if let Some(init) = self.find_method("init") {
+            init.arity()
+        } else {
+            0
+        }
     }
 
     pub fn call(
@@ -45,7 +49,13 @@ impl ClassObject {
         interp: &mut Interpreter,
         args: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        Ok(Object::ClassInstance(ClassInstance::new(self.clone())))
+        let instance = ClassInstance::new(self.clone());
+
+        if let Some(init) = self.find_method("init") {
+            init.bind(instance.clone())?.call(interp, args)?;
+        }
+
+        Ok(Object::ClassInstance(instance))
     }
 }
 
@@ -76,13 +86,11 @@ impl ClassInstance {
         } else {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
-                Some(method) => {
-                    match method.clone().bind(self.clone()) {
-                        Ok(bound_method) => Ok(Object::Callable(CallableObject::Function(Rc::new(
-                            RefCell::new(bound_method),
-                        )))),
-                        Err(e) => Err(e),
-                    }
+                Some(method) => match method.clone().bind(self.clone()) {
+                    Ok(bound_method) => Ok(Object::Callable(CallableObject::Function(Rc::new(
+                        RefCell::new(bound_method),
+                    )))),
+                    Err(e) => Err(e),
                 },
                 None => Err(RuntimeError::UndefinedVariable(
                     name.line(),

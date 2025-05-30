@@ -16,6 +16,7 @@ pub struct Function {
     pub declaration: FunctionStmt,
     /// The environment in which the function was defined (the closure).
     pub closure: Rc<RefCell<Environment>>,
+    pub is_initializer: bool,
 }
 
 impl Function {
@@ -25,10 +26,15 @@ impl Function {
     ///
     /// * `declaration` - The `FunctionStmt` that declares this function.
     /// * `closure` - The environment where the function was defined.
-    pub fn new(declaration: FunctionStmt, closure: Rc<RefCell<Environment>>) -> Function {
+    pub fn new(
+        declaration: FunctionStmt,
+        closure: Rc<RefCell<Environment>>,
+        is_initializer: bool,
+    ) -> Function {
         Function {
             declaration,
             closure,
+            is_initializer,
         }
     }
 
@@ -38,6 +44,7 @@ impl Function {
         Ok(Function {
             declaration: self.declaration.clone(),
             closure: Rc::new(RefCell::new(environment)),
+            is_initializer: self.is_initializer,
         })
     }
 }
@@ -81,6 +88,10 @@ impl Function {
 
         // restore previous environment
         interpreter.environment = previous;
+
+        if self.is_initializer {
+            return Ok(self.closure.borrow().get_at(&0, "this".to_string())?);
+        }
 
         Ok(return_val)
     }

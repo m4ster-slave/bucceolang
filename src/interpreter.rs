@@ -408,7 +408,7 @@ impl StmtVisitor<()> for Interpreter {
     /// Register a new function in the environment for executing it later
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<(), RuntimeError> {
         // .clone increases the RC
-        let function = Function::new(stmt.clone(), self.environment.clone());
+        let function = Function::new(stmt.clone(), self.environment.clone(), false);
 
         self.environment.borrow_mut().define(
             stmt.name.lexeme().to_string(),
@@ -447,6 +447,7 @@ impl StmtVisitor<()> for Interpreter {
                 Function {
                     declaration: method.clone(),
                     closure: self.environment.clone(),
+                    is_initializer: method.name.lexeme().eq("init"),
                 },
             );
         }
