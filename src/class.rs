@@ -56,20 +56,21 @@ impl Display for ClassObject {
 #[derive(Clone, Debug)]
 pub struct ClassInstance {
     class: ClassObject,
-    fields: HashMap<String, Object>,
+    fields: Rc<RefCell<HashMap<String, Object>>>,
 }
 
 impl ClassInstance {
     pub fn new(class: ClassObject) -> Self {
         Self {
             class,
-            fields: HashMap::new(),
+            fields: Rc::new(RefCell::new(HashMap::new())),
         }
     }
 
     pub fn get(&self, name: Token) -> Result<Object, RuntimeError> {
-        if self.fields.contains_key(name.lexeme()) {
-            Ok(self.fields.get(name.lexeme()).unwrap().clone())
+        let fields = self.fields.borrow();
+        if fields.contains_key(name.lexeme()) {
+            Ok(fields.get(name.lexeme()).unwrap().clone())
         } else {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
@@ -83,7 +84,8 @@ impl ClassInstance {
     }
 
     pub fn set(&mut self, name: Token, value: Object) {
-        self.fields.insert(name.lexeme().into(), value);
+        let mut fields = self.fields.borrow_mut();
+        fields.insert(name.lexeme().into(), value);
     }
 }
 

@@ -300,18 +300,15 @@ impl ExprVisitor<Object> for Interpreter {
         }
     }
 
-    fn visit_property_access_expr(
-        &mut self,
-        expr: &mut PropertyAccessExpr,
-    ) -> Result<Object, RuntimeError> {
-        let obj = expr.object.accept(self)?;
-
-        if let Object::ClassInstance(instance) = obj {
-            Ok(instance.get(expr.name.clone())?)
+    fn visit_property_access_expr(&mut self, expr: &mut PropertyAccessExpr) -> Result<Object, RuntimeError> {
+        let object = expr.object.accept(self)?;
+        
+        if let Object::ClassInstance(instance) = object {
+            instance.get(expr.name.clone())
         } else {
             Err(RuntimeError::TypeError(
                 expr.name.line(),
-                "Only instances have properties.".into(),
+                "Only instances have properties.".to_string(),
             ))
         }
     }
@@ -320,13 +317,16 @@ impl ExprVisitor<Object> for Interpreter {
         &mut self,
         expr: &mut PropertyAssignmentExpr,
     ) -> Result<Object, RuntimeError> {
-        if let Object::ClassInstance(class_instance) = &mut expr.object.accept(self)? {
-            class_instance.set(expr.name.clone(), expr.value.accept(self)?);
-            Ok(Object::ClassInstance(class_instance.clone()))
+        let object = expr.object.accept(self)?;
+
+        if let Object::ClassInstance(mut instance) = object.clone() {
+            let value = expr.value.accept(self)?;
+            instance.set(expr.name.clone(), value.clone());
+            Ok(value)
         } else {
-            Err(RuntimeError::Other(
+            Err(RuntimeError::TypeError(
                 expr.name.line(),
-                "Only instances have fields.".into(),
+                "Only instances have fields.".to_string(),
             ))
         }
     }

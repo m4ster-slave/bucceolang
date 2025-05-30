@@ -94,7 +94,7 @@ impl Parser {
                         value: Box::new(value),
                     }))
                 }
-                Expr::PropertyAssignment(class_assignment) => {
+                Expr::PropertyAccess(class_assignment) => {
                     return Ok(Expr::PropertyAssignment(PropertyAssignmentExpr {
                         object: class_assignment.object,
                         name: class_assignment.name,

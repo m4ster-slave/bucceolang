@@ -330,6 +330,8 @@ mod test {
         print Bagel;
         bagel.eat(); // prints "eating bagel"
         bagel.eating_n_bagels(10);
+        bagel.flavour = "everything";
+        print bagel.flavour;
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -361,7 +363,7 @@ mod test {
 
         assert_eq!(
             result,
-            "Bagel instance\nBagel\neating bagel\neating 10 bagels!\n"
+            "Bagel instance\nBagel\neating bagel\neating 10 bagels!\neverything\n"
         );
     }
 }
