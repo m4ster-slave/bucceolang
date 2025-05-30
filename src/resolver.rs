@@ -1,6 +1,5 @@
+use std::collections::HashMap;
 use std::mem;
-use std::thread::current;
-use std::{collections::HashMap, thread::scope};
 
 use crate::{
     expr_types::VariableExpr, expr_types::*, runtime_error::RuntimeError, stmt_types::*,

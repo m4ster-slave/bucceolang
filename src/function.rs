@@ -82,7 +82,7 @@ impl Function {
 
         let return_val = match interpreter.visit_block_stmt(&mut self.declaration.body) {
             Ok(()) => Object::Nil,
-            Err(RuntimeError::Return(value)) => value,
+            Err(RuntimeError::Return(value)) => value.unwrap_or(Object::Nil),
             Err(e) => return Err(e),
         };
 
@@ -90,7 +90,7 @@ impl Function {
         interpreter.environment = previous;
 
         if self.is_initializer {
-            return Ok(self.closure.borrow().get_at(&0, "this".to_string())?);
+            return self.closure.borrow().get_at(&0, "this".to_string());
         }
 
         Ok(return_val)

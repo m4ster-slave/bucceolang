@@ -424,8 +424,7 @@ impl StmtVisitor<()> for Interpreter {
             None
         };
 
-        // TODO fix
-        Err(RuntimeError::Return(value.unwrap()))
+        Err(RuntimeError::Return(value))
     }
 
     fn visit_break_stmt(&mut self) -> Result<(), RuntimeError> {
