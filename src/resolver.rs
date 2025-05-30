@@ -1,9 +1,15 @@
 use std::collections::HashMap;
+use std::mem;
 
 use crate::{
     expr_types::VariableExpr, expr_types::*, runtime_error::RuntimeError, stmt_types::*,
     token::Token, Interpreter,
 };
+
+enum ClassType {
+    None,
+    Class,
+}
 
 /// The `Resolver` is responsible for performing static analysis on the AST to resolve variable scopes and ensure correct variable usage before interpretation.
 ///
@@ -18,6 +24,7 @@ pub struct Resolver<'a> {
     /// whether or not we have finished resolving that variable’s initializer.
     scopes: Vec<HashMap<String, bool>>,
     loop_depth: usize,
+    current_class: ClassType,
 }
 
 impl Resolver<'_> {
@@ -26,6 +33,7 @@ impl Resolver<'_> {
             interpreter,
             scopes: Vec::new(),
             loop_depth: 0,
+            current_class: ClassType::None,
         }
     }
 }
@@ -111,6 +119,9 @@ impl StmtVisitor<()> for Resolver<'_> {
     }
 
     fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<(), RuntimeError> {
+        let enclosing_class = mem::replace(&mut self.current_class, ClassType::Class);
+        self.current_class = ClassType::Class;
+
         self.declare(&stmt.name, false)?;
         self.begin_scope()?;
 
@@ -124,6 +135,7 @@ impl StmtVisitor<()> for Resolver<'_> {
         }
 
         self.end_scope()?;
+        self.current_class = enclosing_class;
         self.declare(&stmt.name, true)
     }
 }
@@ -201,6 +213,13 @@ impl ExprVisitor<()> for Resolver<'_> {
     }
 
     fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<(), RuntimeError> {
+        if let ClassType::None = self.current_class {
+            return Err(RuntimeError::UndefinedVariable(
+                expr.keyword.line(),
+                "Can't use 'this' outside of a class.".to_string(),
+            ));
+        }
+
         self.resolve_local(Expr::This(expr.clone()), &expr.keyword)
     }
 }
