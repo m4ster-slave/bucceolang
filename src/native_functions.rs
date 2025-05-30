@@ -1,4 +1,6 @@
-use crate::{interpreter::Interpreter, object::Object, runtime_error::RuntimeError};
+use crate::{
+    callable::Callable, interpreter::Interpreter, object::Object, runtime_error::RuntimeError,
+};
 use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -18,9 +20,9 @@ use std::io::prelude::*;
 #[derive(Clone, Debug)]
 pub struct ClockFn;
 
-impl ClockFn {
-    pub fn call(
-        &self,
+impl Callable for ClockFn {
+    fn call(
+        &mut self,
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -31,7 +33,7 @@ impl ClockFn {
         Ok(Object::Number(now))
     }
 
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         0
     }
 }
@@ -53,9 +55,9 @@ impl Display for ClockFn {
 /// - `String`: The line read from stdin, trimmed of whitespace.
 #[derive(Clone, Debug)]
 pub struct ReadFn;
-impl ReadFn {
-    pub fn call(
-        &self,
+impl Callable for ReadFn {
+    fn call(
+        &mut self,
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -69,7 +71,7 @@ impl ReadFn {
         }
     }
 
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         0
     }
 }
@@ -121,17 +123,15 @@ impl RandomFn {
             *s
         })
     }
-
-    pub fn call(
-        &self,
+}
+impl Callable for RandomFn {
+    fn call(
+        &mut self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let range_obj = arguments.pop().ok_or_else(|| {
-            RuntimeError::Other(
-                0,
-                format!("not enough arguments in function {}", self.to_string()),
-            )
+            RuntimeError::Other(0, format!("not enough arguments in function {}", self))
         })?;
 
         if let Object::Number(max) = range_obj {
@@ -146,7 +146,7 @@ impl RandomFn {
         }
     }
 
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         1
     }
 }
@@ -174,17 +174,14 @@ impl Display for RandomFn {
 /// - If the argument is not a number, a runtime error is returned.
 #[derive(Clone, Debug)]
 pub struct SinFn;
-impl SinFn {
-    pub fn call(
-        &self,
+impl Callable for SinFn {
+    fn call(
+        &mut self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let arg = arguments.pop().ok_or_else(|| {
-            RuntimeError::Other(
-                0,
-                format!("not enough arguments in function {}", self.to_string()),
-            )
+            RuntimeError::Other(0, format!("not enough arguments in function {}", self))
         })?;
 
         if let Object::Number(num) = arg {
@@ -195,7 +192,7 @@ impl SinFn {
         }
     }
 
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         1
     }
 }
@@ -223,17 +220,14 @@ impl Display for SinFn {
 /// - If the argument is not a number, a runtime error is returned.
 #[derive(Clone, Debug)]
 pub struct SqrtFn;
-impl SqrtFn {
-    pub fn call(
-        &self,
+impl Callable for SqrtFn {
+    fn call(
+        &mut self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let arg = arguments.pop().ok_or_else(|| {
-            RuntimeError::Other(
-                0,
-                format!("not enough arguments in function {}", self.to_string()),
-            )
+            RuntimeError::Other(0, format!("not enough arguments in function {}", self))
         })?;
 
         if let Object::Number(num) = arg {
@@ -243,7 +237,7 @@ impl SqrtFn {
         }
     }
 
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         1
     }
 }

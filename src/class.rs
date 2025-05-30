@@ -1,4 +1,5 @@
-use crate::callable::CallableObject;
+use crate::callable::Callable;
+
 use crate::function::Function;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
@@ -25,18 +26,12 @@ impl ClassObject {
 
     fn find_method(&self, name: &str) -> Option<Function> {
         self.methods.get(name).cloned()
-
-        //     map(|method| {
-        //     Object::Callable(CallableObject::Function(Rc::new(RefCell::new(
-        //         method.clone(),
-        //     ))))
-        // })
     }
 }
 
 // callable
-impl ClassObject {
-    pub fn arity(&self) -> usize {
+impl Callable for ClassObject {
+    fn arity(&self) -> usize {
         if let Some(init) = self.find_method("init") {
             init.arity()
         } else {
@@ -44,8 +39,8 @@ impl ClassObject {
         }
     }
 
-    pub fn call(
-        &self,
+    fn call(
+        &mut self,
         interp: &mut Interpreter,
         args: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -87,9 +82,7 @@ impl ClassInstance {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
                 Some(method) => match method.clone().bind(self.clone()) {
-                    Ok(bound_method) => Ok(Object::Callable(CallableObject::Function(Rc::new(
-                        RefCell::new(bound_method),
-                    )))),
+                    Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(bound_method)))),
                     Err(e) => Err(e),
                 },
                 None => Err(RuntimeError::UndefinedVariable(

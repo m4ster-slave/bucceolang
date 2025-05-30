@@ -1,4 +1,4 @@
-use crate::callable::CallableObject;
+use crate::callable::Callable;
 use crate::class::ClassObject;
 use crate::environment::Environment;
 use crate::expr_types::*;
@@ -25,7 +25,7 @@ pub struct Interpreter {
     pub environment: Rc<RefCell<Environment>>,
     /// holds the outermost global environment
     pub globals: Rc<RefCell<Environment>>,
-    ///
+    /// describres in what scope variables are
     pub locals: HashMap<Expr, usize>,
     /// output destination for print statements
     pub output: Rc<RefCell<dyn Write>>,
@@ -266,20 +266,20 @@ impl ExprVisitor<Object> for Interpreter {
 
         match callee {
             Object::Callable(func) => {
-                if arguments.len() != func.arity() {
+                if arguments.len() != func.borrow().arity() {
                     Err(RuntimeError::Other(
                         expr.paren.line(),
                         format!(
                             "Expected {} arguments but got {}.",
-                            func.arity(),
+                            func.borrow().arity(),
                             arguments.len()
                         ),
                     ))
                 } else {
-                    func.call(self, arguments)
+                    func.borrow_mut().call(self, arguments)
                 }
             }
-            Object::Class(class) => {
+            Object::Class(mut class) => {
                 if arguments.len() != class.arity() {
                     Err(RuntimeError::Other(
                         expr.paren.line(),
@@ -409,10 +409,9 @@ impl StmtVisitor<()> for Interpreter {
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<(), RuntimeError> {
         // .clone increases the RC
         let function = Function::new(stmt.clone(), self.environment.clone(), false);
-
         self.environment.borrow_mut().define(
             stmt.name.lexeme().to_string(),
-            Object::Callable(CallableObject::Function(Rc::new(RefCell::new(function)))),
+            Object::Callable(Rc::new(RefCell::new(function))),
         )?;
         Ok(())
     }
@@ -496,7 +495,7 @@ impl Interpreter {
             .borrow_mut()
             .define(
                 "clock".into(),
-                Object::Callable(CallableObject::ClockFn(ClockFn)),
+                Object::Callable(Rc::new(RefCell::new(ClockFn))),
             )
             .expect("Failed to define native function 'clock'");
 
@@ -504,7 +503,7 @@ impl Interpreter {
             .borrow_mut()
             .define(
                 "read".into(),
-                Object::Callable(CallableObject::ReadFn(ReadFn)),
+                Object::Callable(Rc::new(RefCell::new(ReadFn))),
             )
             .expect("Failed to define native function 'read'");
 
@@ -512,20 +511,20 @@ impl Interpreter {
             .borrow_mut()
             .define(
                 "random".into(),
-                Object::Callable(CallableObject::RandomFn(RandomFn)),
+                Object::Callable(Rc::new(RefCell::new(RandomFn))),
             )
             .expect("Failed to define native function 'random'");
 
         globals
             .borrow_mut()
-            .define("sin".into(), Object::Callable(CallableObject::SinFn(SinFn)))
+            .define("sin".into(), Object::Callable(Rc::new(RefCell::new(SinFn))))
             .expect("Failed to define native function 'sin'");
 
         globals
             .borrow_mut()
             .define(
                 "sqrt".into(),
-                Object::Callable(CallableObject::SqrtFn(SqrtFn)),
+                Object::Callable(Rc::new(RefCell::new(SqrtFn))),
             )
             .expect("Failed to define native function 'sqrt'");
 
@@ -552,6 +551,7 @@ impl Interpreter {
     }
 
     /// Default constructor, writes to stdout
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::new_with_output(Rc::new(RefCell::new(std::io::stdout())))
     }

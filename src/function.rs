@@ -1,3 +1,4 @@
+use crate::callable::Callable;
 use std::rc::Rc;
 use std::{cell::RefCell, fmt::Display};
 
@@ -49,7 +50,7 @@ impl Function {
     }
 }
 
-impl Function {
+impl Callable for Function {
     /// Calls the function with the given arguments.
     ///
     /// # Arguments
@@ -60,7 +61,7 @@ impl Function {
     /// # Returns
     ///
     /// Returns a `Result` containing the return value of the function as an `Object`, or a `RuntimeError` if an error occurs during execution
-    pub fn call(
+    fn call(
         &mut self,
         interpreter: &mut crate::interpreter::Interpreter,
         arguments: Vec<Object>,
@@ -97,7 +98,7 @@ impl Function {
     }
 
     /// Returns the number of parameters the function expects
-    pub fn arity(&self) -> usize {
+    fn arity(&self) -> usize {
         self.declaration.params.len()
     }
 }
