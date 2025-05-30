@@ -23,12 +23,14 @@ impl ClassObject {
         }
     }
 
-    fn find_method(&self, name: &str) -> Option<Object> {
-        self.methods.get(name).map(|method| {
-            Object::Callable(CallableObject::Function(Rc::new(RefCell::new(
-                method.clone(),
-            ))))
-        })
+    fn find_method(&self, name: &str) -> Option<Function> {
+        self.methods.get(name).cloned()
+
+        //     map(|method| {
+        //     Object::Callable(CallableObject::Function(Rc::new(RefCell::new(
+        //         method.clone(),
+        //     ))))
+        // })
     }
 }
 
@@ -74,7 +76,14 @@ impl ClassInstance {
         } else {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
-                Some(method) => Ok(method),
+                Some(method) => {
+                    match method.clone().bind(self.clone()) {
+                        Ok(bound_method) => Ok(Object::Callable(CallableObject::Function(Rc::new(
+                            RefCell::new(bound_method),
+                        )))),
+                        Err(e) => Err(e),
+                    }
+                },
                 None => Err(RuntimeError::UndefinedVariable(
                     name.line(),
                     format!("Undefined property '{}'.", name.lexeme()),

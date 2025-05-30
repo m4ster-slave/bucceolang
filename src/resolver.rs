@@ -111,10 +111,19 @@ impl StmtVisitor<()> for Resolver<'_> {
     }
 
     fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<(), RuntimeError> {
+        self.declare(&stmt.name, false)?;
+        self.begin_scope()?;
+
+        self.scopes
+            .last_mut()
+            .unwrap()
+            .insert("this".to_string(), true);
+
         for method in &mut stmt.methods {
             self.resolve_function(method)?;
         }
 
+        self.end_scope()?;
         self.declare(&stmt.name, true)
     }
 }
@@ -189,6 +198,10 @@ impl ExprVisitor<()> for Resolver<'_> {
         expr.value.accept(self)?;
         expr.object.accept(self)?;
         Ok(())
+    }
+
+    fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<(), RuntimeError> {
+        self.resolve_local(Expr::This(expr.clone()), &expr.keyword)
     }
 }
 

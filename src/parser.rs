@@ -276,6 +276,11 @@ impl Parser {
                 name: self.previous().clone(),
             }));
         }
+        if self.match_token(TokenType::This) {
+            return Ok(Expr::This(ThisExpr {
+                keyword: self.previous().clone(),
+            }));
+        }
         if self.match_token(TokenType::LeftParen) {
             let _paren_open = self.previous().clone();
             let expr = self.expression().inspect_err(|_| {

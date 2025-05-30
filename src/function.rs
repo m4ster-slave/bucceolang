@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::{
+    class::ClassInstance,
     environment::Environment,
     object::Object,
     runtime_error::RuntimeError,
@@ -29,6 +30,15 @@ impl Function {
             declaration,
             closure,
         }
+    }
+
+    pub fn bind(&self, instance: ClassInstance) -> Result<Function, RuntimeError> {
+        let mut environment = Environment::new_enclosed(self.closure.clone());
+        environment.define("this".to_string(), Object::ClassInstance(instance))?;
+        Ok(Function {
+            declaration: self.declaration.clone(),
+            closure: Rc::new(RefCell::new(environment)),
+        })
     }
 }
 

@@ -21,6 +21,7 @@ pub enum Expr {
     Call(CallExpr),
     PropertyAccess(PropertyAccessExpr),
     PropertyAssignment(PropertyAssignmentExpr),
+    This(ThisExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -107,6 +108,7 @@ pub trait ExprVisitor<T> {
         &mut self,
         expr: &mut PropertyAssignmentExpr,
     ) -> Result<T, RuntimeError>;
+    fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -138,6 +140,7 @@ impl Expr {
             Expr::Call(expr) => visitor.visit_call_expr(expr),
             Expr::PropertyAccess(expr) => visitor.visit_property_access_expr(expr),
             Expr::PropertyAssignment(expr) => visitor.visit_property_assignment_expr(expr),
+            Expr::This(expr) => visitor.visit_this_expr(expr),
         }
     }
 }
@@ -219,6 +222,11 @@ pub struct PropertyAssignmentExpr {
     pub value: Box<Expr>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ThisExpr {
+    pub keyword: Token,
+}
+
 use std::hash::{Hash, Hasher};
 
 impl PartialEq for Expr {
@@ -245,7 +253,11 @@ impl PartialEq for Expr {
                         .zip(b.arguments.clone())
                         .all(|(a_e, b_e)| *a_e == b_e)
             }
-
+            (This(a), This(b)) => {
+                a.keyword.token_number() == b.keyword.token_number() &&
+                a.keyword.line() == b.keyword.line() &&
+                a.keyword.lexeme() == b.keyword.lexeme()
+            }
             _ => false,
         }
     }
@@ -306,6 +318,11 @@ impl Hash for Expr {
                 expr.name.lexeme().hash(state);
                 expr.object.hash(state);
                 expr.value.hash(state);
+            }
+            Expr::This(expr) => {
+                expr.keyword.token_number().hash(state);
+                expr.keyword.line().hash(state);
+                expr.keyword.lexeme().hash(state);
             }
         }
     }

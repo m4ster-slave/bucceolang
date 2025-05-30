@@ -366,4 +366,58 @@ mod test {
             "Bagel instance\nBagel\neating bagel\neating 10 bagels!\neverything\n"
         );
     }
+
+    #[test]
+    fn test_this() {
+        let source = r#"
+        class Knoedel {
+          fn taste() {
+            print "Tasting " + this.flavor + "knoedel";
+          }
+        }
+
+        var spinat_knoedel = Knoedel();
+        spinat_knoedel.flavor = "Spinach";
+        spinat_knoedel.taste(); 
+
+        var press_knoedel = Knoedel();
+        press_knoedel.flavor = "Press";
+        press_knoedel.taste(); 
+
+        press_knoedel.flavor = 10000;
+        press_knoedel.taste(); 
+        "#;
+
+        let tokens = tokenize(source).expect("Tokenization failed");
+        let mut stmts = parse(tokens).expect("Parsing failed");
+
+        let output: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
+        let output_for_interp = output.clone();
+
+        let mut interpreter = Interpreter::new_with_output(output_for_interp);
+        let mut resolver = Resolver::new(&mut interpreter);
+        resolver.resolve(&mut stmts).expect("Resolving failed");
+
+        let interpreter_result = interpreter.interprete(&mut stmts);
+        assert!(
+            interpreter_result.is_ok(),
+            "Interpreter failed: {:?}",
+            interpreter_result.err()
+        );
+        match interpreter_result {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        };
+
+        let bytes: std::cell::Ref<'_, Vec<u8>> = output.borrow();
+        let result = match str::from_utf8(&bytes) {
+            Ok(v) => v.to_owned(),
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+
+        assert_eq!(
+            result,
+            "Tasting Spinachknoedel\nTasting Pressknoedel\nTasting 10000knoedel\n"
+        );
+    }
 }

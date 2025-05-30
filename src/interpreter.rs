@@ -300,9 +300,12 @@ impl ExprVisitor<Object> for Interpreter {
         }
     }
 
-    fn visit_property_access_expr(&mut self, expr: &mut PropertyAccessExpr) -> Result<Object, RuntimeError> {
+    fn visit_property_access_expr(
+        &mut self,
+        expr: &mut PropertyAccessExpr,
+    ) -> Result<Object, RuntimeError> {
         let object = expr.object.accept(self)?;
-        
+
         if let Object::ClassInstance(instance) = object {
             instance.get(expr.name.clone())
         } else {
@@ -329,6 +332,10 @@ impl ExprVisitor<Object> for Interpreter {
                 "Only instances have fields.".to_string(),
             ))
         }
+    }
+
+    fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<Object, RuntimeError> {
+        self.look_up_variable(&expr.keyword, Expr::This(expr.clone()))
     }
 }
 
