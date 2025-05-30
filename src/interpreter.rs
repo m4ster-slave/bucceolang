@@ -424,6 +424,7 @@ impl StmtVisitor<()> for Interpreter {
             None
         };
 
+        // TODO fix
         Err(RuntimeError::Return(value.unwrap()))
     }
 

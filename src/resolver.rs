@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::mem;
+use std::thread::current;
+use std::{collections::HashMap, thread::scope};
 
 use crate::{
     expr_types::VariableExpr, expr_types::*, runtime_error::RuntimeError, stmt_types::*,
@@ -9,6 +10,13 @@ use crate::{
 enum ClassType {
     None,
     Class,
+}
+
+enum FunctionType {
+    None,
+    Function,
+    Method,
+    Initializer,
 }
 
 /// The `Resolver` is responsible for performing static analysis on the AST to resolve variable scopes and ensure correct variable usage before interpretation.
@@ -24,6 +32,7 @@ pub struct Resolver<'a> {
     /// whether or not we have finished resolving that variable’s initializer.
     scopes: Vec<HashMap<String, bool>>,
     loop_depth: usize,
+    current_function: FunctionType,
     current_class: ClassType,
 }
 
@@ -34,6 +43,7 @@ impl Resolver<'_> {
             scopes: Vec::new(),
             loop_depth: 0,
             current_class: ClassType::None,
+            current_function: FunctionType::None,
         }
     }
 }
@@ -59,7 +69,7 @@ impl StmtVisitor<()> for Resolver<'_> {
 
     fn visit_function_stmt(&mut self, stmt: &mut FunctionStmt) -> Result<(), RuntimeError> {
         self.declare(&stmt.name, true)?;
-        self.resolve_function(stmt)?;
+        self.resolve_function(stmt, FunctionType::Function)?;
         Ok(())
     }
 
@@ -82,7 +92,21 @@ impl StmtVisitor<()> for Resolver<'_> {
     }
 
     fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<(), RuntimeError> {
+        if let FunctionType::None = self.current_function {
+            return Err(RuntimeError::Other(
+                stmt.keyword.line(),
+                "Can't return from top-level code.".to_string(),
+            ));
+        }
+
         if let Some(ret) = &mut stmt.value {
+            if let FunctionType::Initializer = self.current_function {
+                return Err(RuntimeError::Other(
+                    stmt.keyword.line(),
+                    "Can't return a value from an initializer.".to_string(),
+                ));
+            }
+
             self.resolve_expr(ret)?;
         }
         Ok(())
@@ -131,7 +155,13 @@ impl StmtVisitor<()> for Resolver<'_> {
             .insert("this".to_string(), true);
 
         for method in &mut stmt.methods {
-            self.resolve_function(method)?;
+            let mut declaration = FunctionType::Method;
+
+            if method.name.lexeme().eq("init") {
+                declaration = FunctionType::Initializer;
+            }
+
+            self.resolve_function(method, declaration)?;
         }
 
         self.end_scope()?;
@@ -266,6 +296,12 @@ impl Resolver<'_> {
             // last_mut() only ever returns none if the Vec is empty
             None => (),
             Some(scope) => {
+                if scope.contains_key(name.lexeme()) {
+                    return Err(RuntimeError::Other(
+                        name.line(),
+                        "Already a variable with this name in this scope.".to_string(),
+                    ));
+                }
                 scope.insert(name.lexeme().to_owned(), defined);
             }
         };
@@ -290,7 +326,14 @@ impl Resolver<'_> {
         Ok(())
     }
 
-    fn resolve_function(&mut self, function: &mut FunctionStmt) -> Result<(), RuntimeError> {
+    fn resolve_function(
+        &mut self,
+        function: &mut FunctionStmt,
+        fn_type: FunctionType,
+    ) -> Result<(), RuntimeError> {
+        let enclosing_function = mem::replace(&mut self.current_function, FunctionType::Function);
+        self.current_function = fn_type;
+
         self.begin_scope()?;
         for param in function.params.iter() {
             self.declare(param, false)?;
@@ -299,6 +342,8 @@ impl Resolver<'_> {
         self.begin_scope()?;
         self.resolve_stmts(&mut function.body)?;
         self.end_scope()?;
-        self.end_scope()
+        self.end_scope()?;
+        self.current_function = enclosing_function;
+        Ok(())
     }
 }
