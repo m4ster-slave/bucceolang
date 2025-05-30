@@ -1,4 +1,5 @@
 use crate::callable::CallableObject;
+use crate::class::ClassObject;
 use crate::environment::Environment;
 use crate::expr_types::*;
 use crate::function::Function;
@@ -135,6 +136,8 @@ impl ExprVisitor<Object> for Interpreter {
                             Object::Number(_) => "number",
                             Object::String(_) => "string",
                             Object::Callable(_) => "callable",
+                            Object::Class(_) => "class",
+                            Object::ClassInstance(_) => "class instance",
                         },
                         match right {
                             Object::Nil => "nil",
@@ -142,6 +145,8 @@ impl ExprVisitor<Object> for Interpreter {
                             Object::Number(_) => "number",
                             Object::String(_) => "string",
                             Object::Callable(_) => "callable",
+                            Object::Class(_) => "class",
+                            Object::ClassInstance(_) => "class instance",
                         }
                     ),
                 )),
@@ -274,10 +279,55 @@ impl ExprVisitor<Object> for Interpreter {
                     func.call(self, arguments)
                 }
             }
+            Object::Class(class) => {
+                if arguments.len() != class.arity() {
+                    Err(RuntimeError::Other(
+                        expr.paren.line(),
+                        format!(
+                            "Expected {} arguments but got {}.",
+                            class.arity(),
+                            arguments.len()
+                        ),
+                    ))
+                } else {
+                    class.call(self, arguments)
+                }
+            }
             _ => Err(RuntimeError::TypeError(
                 expr.paren.line(),
                 "Can only call functions and classes.".to_string(),
             )),
+        }
+    }
+
+    fn visit_property_access_expr(
+        &mut self,
+        expr: &mut PropertyAccessExpr,
+    ) -> Result<Object, RuntimeError> {
+        let obj = expr.object.accept(self)?;
+
+        if let Object::ClassInstance(instance) = obj {
+            Ok(instance.get(expr.name.clone())?)
+        } else {
+            Err(RuntimeError::TypeError(
+                expr.name.line(),
+                "Only instances have properties.".into(),
+            ))
+        }
+    }
+
+    fn visit_property_assignment_expr(
+        &mut self,
+        expr: &mut PropertyAssignmentExpr,
+    ) -> Result<Object, RuntimeError> {
+        if let Object::ClassInstance(class_instance) = &mut expr.object.accept(self)? {
+            class_instance.set(expr.name.clone(), expr.value.accept(self)?);
+            Ok(Object::ClassInstance(class_instance.clone()))
+        } else {
+            Err(RuntimeError::Other(
+                expr.name.line(),
+                "Only instances have fields.".into(),
+            ))
         }
     }
 }
@@ -376,6 +426,30 @@ impl StmtVisitor<()> for Interpreter {
 
     fn visit_continue_stmt(&mut self) -> Result<(), RuntimeError> {
         Err(RuntimeError::Continue)
+    }
+
+    fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<(), RuntimeError> {
+        self.environment
+            .borrow_mut()
+            .define(stmt.name.lexeme().into(), Object::Nil)?;
+
+        let mut methods: HashMap<String, Function> = HashMap::new();
+        for method in &mut stmt.methods {
+            methods.insert(
+                method.name.lexeme().into(),
+                Function {
+                    declaration: method.clone(),
+                    closure: self.environment.clone(),
+                },
+            );
+        }
+
+        let class = ClassObject::new(stmt.name.lexeme(), methods);
+
+        self.environment
+            .borrow_mut()
+            .assign(&stmt.name, &Object::Class(class))?;
+        Ok(())
     }
 }
 

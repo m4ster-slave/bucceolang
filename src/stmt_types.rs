@@ -24,6 +24,7 @@ pub enum Stmt {
     Return(ReturnStmt),
     Break,
     Continue,
+    Class(ClassStmt),
 }
 
 /// Defines the visitor trait for calling the `Stmt` type.
@@ -52,6 +53,7 @@ pub trait StmtVisitor<T> {
     fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<T, RuntimeError>;
     fn visit_break_stmt(&mut self) -> Result<T, RuntimeError>;
     fn visit_continue_stmt(&mut self) -> Result<T, RuntimeError>;
+    fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<T, RuntimeError>;
 }
 
 impl Stmt {
@@ -68,6 +70,7 @@ impl Stmt {
             Stmt::Return(return_stmt) => visitor.visit_return_stmt(return_stmt),
             Stmt::Break => visitor.visit_break_stmt(),
             Stmt::Continue => visitor.visit_continue_stmt(),
+            Stmt::Class(class_stmt) => visitor.visit_class_stmt(class_stmt),
         }
     }
 }
@@ -131,4 +134,10 @@ pub struct ReturnStmt {
     pub keyword: Token,
     /// The value to return, if any.
     pub value: Option<Box<Expr>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ClassStmt {
+    pub name: Token,
+    pub methods: Vec<FunctionStmt>,
 }

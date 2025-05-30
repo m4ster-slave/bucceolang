@@ -1,7 +1,7 @@
 use crate::expr_types::*;
 use crate::object::Object;
 use crate::parser_error::{self, error, ParseError};
-use crate::stmt_types::{FunctionStmt, IfStmt, ReturnStmt, Stmt, VarStmt, WhileStmt};
+use crate::stmt_types::{ClassStmt, FunctionStmt, IfStmt, ReturnStmt, Stmt, VarStmt, WhileStmt};
 use crate::token::TokenType;
 use crate::Token;
 
@@ -91,6 +91,13 @@ impl Parser {
                 Expr::Variable(var_expr) => {
                     return Ok(Expr::Assign(AssignExpr {
                         name: var_expr.name,
+                        value: Box::new(value),
+                    }))
+                }
+                Expr::PropertyAssignment(class_assignment) => {
+                    return Ok(Expr::PropertyAssignment(PropertyAssignmentExpr {
+                        object: class_assignment.object,
+                        name: class_assignment.name,
                         value: Box::new(value),
                     }))
                 }
@@ -561,6 +568,7 @@ impl Parser {
     fn declaration(&mut self) -> Result<Stmt, ParseError> {
         match self.peek().token_type() {
             TokenType::VarKeyword => self.variable_declaration(),
+            TokenType::Class => self.class_declaration(),
             TokenType::Fn => self.function("function"),
             _ => self.statement(),
         }
@@ -569,12 +577,37 @@ impl Parser {
         })
     }
 
+    fn class_declaration(&mut self) -> Result<Stmt, ParseError> {
+        self.advance();
+        let name = self.consume(TokenType::Var, "Expect class name.")?.clone();
+
+        self.consume(TokenType::LeftBrace, "Expect '{' before class body.")?;
+
+        let mut methods: Vec<FunctionStmt> = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            if let Stmt::Function(method) = self.function("method")? {
+                methods.push(method);
+            } else {
+                return Err(error(
+                    self.peek(),
+                    format!(
+                        "Unexpected character in class declaration '{}'.",
+                        self.peek().lexeme()
+                    ),
+                ));
+            }
+        }
+
+        self.consume(TokenType::RightBrace, "Expect '}' after class body.")?;
+
+        Ok(Stmt::Class(ClassStmt { name, methods }))
+    }
+
     fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
         self.advance();
-        let name = self.consume(TokenType::Var, &format!("Expect {kind} name."))?;
-        // TODO FIXME PLEASE WTF IS THIS LKDFJSKLFSKL
-        // sorry for whoever has to see this
-        let name_cloned = name.clone();
+        let name = self
+            .consume(TokenType::Var, &format!("Expect {kind} name."))?
+            .clone();
 
         self.consume(
             TokenType::LeftParen,
@@ -617,14 +650,14 @@ impl Parser {
             Stmt::Block(stmts) => stmts,
             _ => {
                 return Err(error(
-                    &name_cloned,
+                    &name,
                     "Expected block statement as function body".to_string(),
                 ))
             }
         };
 
         Ok(Stmt::Function(FunctionStmt {
-            name: name_cloned,
+            name,
             params,
             body: body_stmts,
         }))
@@ -793,6 +826,15 @@ impl Parser {
         loop {
             if self.match_token(TokenType::LeftParen) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(TokenType::Dot) {
+                let name = self
+                    .consume(TokenType::Var, "Expect property name after '.'.")?
+                    .clone();
+
+                expr = Expr::PropertyAccess(PropertyAccessExpr {
+                    object: Box::new(expr),
+                    name,
+                });
             } else {
                 break;
             }
@@ -1136,7 +1178,7 @@ mod tests {
                     match &*logical_expr.left {
                         Expr::Literal(lit_expr) => {
                             if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
-                                assert_eq!(*value, true);
+                                assert!(*value);
                             } else {
                                 panic!("Expected boolean literal");
                             }
@@ -1149,7 +1191,7 @@ mod tests {
                     match &*logical_expr.right {
                         Expr::Literal(lit_expr) => {
                             if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
-                                assert_eq!(*value, false);
+                                assert!(!*value);
                             } else {
                                 panic!("Expected boolean literal");
                             }
@@ -1290,7 +1332,7 @@ mod tests {
                 match &if_stmt.condition {
                     Expr::Literal(lit_expr) => {
                         if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
-                            assert_eq!(*value, true);
+                            assert!(*value);
                         } else {
                             panic!("Expected boolean literal");
                         }
@@ -1382,7 +1424,7 @@ mod tests {
                 match &while_stmt.condition {
                     Expr::Literal(lit_expr) => {
                         if let Some(Object::Boolean(value)) = lit_expr.literal.literal() {
-                            assert_eq!(*value, true);
+                            assert!(*value);
                         } else {
                             panic!("Expected boolean literal");
                         }

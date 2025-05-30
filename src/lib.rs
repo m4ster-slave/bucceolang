@@ -1,4 +1,5 @@
 mod callable;
+mod class;
 mod environment;
 mod expr_types;
 mod function;

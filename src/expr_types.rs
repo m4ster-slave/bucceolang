@@ -19,6 +19,8 @@ pub enum Expr {
     /// Represents a logical operation (and, or).
     Logical(LogicalExpr),
     Call(CallExpr),
+    PropertyAccess(PropertyAccessExpr),
+    PropertyAssignment(PropertyAssignmentExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -97,6 +99,14 @@ pub trait ExprVisitor<T> {
 
     fn visit_logical_expr(&mut self, expr: &mut LogicalExpr) -> Result<T, RuntimeError>;
     fn visit_call_expr(&mut self, expr: &mut CallExpr) -> Result<T, RuntimeError>;
+    fn visit_property_access_expr(
+        &mut self,
+        expr: &mut PropertyAccessExpr,
+    ) -> Result<T, RuntimeError>;
+    fn visit_property_assignment_expr(
+        &mut self,
+        expr: &mut PropertyAssignmentExpr,
+    ) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -126,6 +136,8 @@ impl Expr {
             Expr::Assign(expr) => visitor.visit_assign_expr(expr),
             Expr::Logical(expr) => visitor.visit_logical_expr(expr),
             Expr::Call(expr) => visitor.visit_call_expr(expr),
+            Expr::PropertyAccess(expr) => visitor.visit_property_access_expr(expr),
+            Expr::PropertyAssignment(expr) => visitor.visit_property_assignment_expr(expr),
         }
     }
 }
@@ -192,6 +204,19 @@ pub struct CallExpr {
     pub callee: Box<Expr>,
     pub paren: Token,
     pub arguments: Vec<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PropertyAccessExpr {
+    pub object: Box<Expr>,
+    pub name: Token,
+}
+
+#[derive(Debug, Clone)]
+pub struct PropertyAssignmentExpr {
+    pub object: Box<Expr>,
+    pub name: Token,
+    pub value: Box<Expr>,
 }
 
 use std::hash::{Hash, Hasher};
@@ -268,6 +293,19 @@ impl Hash for Expr {
                 for arg in &expr.arguments {
                     arg.hash(state);
                 }
+            }
+            Expr::PropertyAccess(expr) => {
+                expr.name.token_number().hash(state);
+                expr.name.line().hash(state);
+                expr.name.lexeme().hash(state);
+                expr.object.hash(state);
+            }
+            Expr::PropertyAssignment(expr) => {
+                expr.name.token_number().hash(state);
+                expr.name.line().hash(state);
+                expr.name.lexeme().hash(state);
+                expr.object.hash(state);
+                expr.value.hash(state);
             }
         }
     }

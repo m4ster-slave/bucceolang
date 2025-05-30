@@ -109,6 +109,14 @@ impl StmtVisitor<()> for Resolver<'_> {
             Ok(())
         }
     }
+
+    fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<(), RuntimeError> {
+        for method in &mut stmt.methods {
+            self.resolve_function(method)?;
+        }
+
+        self.declare(&stmt.name, true)
+    }
 }
 
 impl ExprVisitor<()> for Resolver<'_> {
@@ -165,6 +173,22 @@ impl ExprVisitor<()> for Resolver<'_> {
 
     fn visit_unary_expr(&mut self, expr: &mut UnaryExpr) -> Result<(), RuntimeError> {
         self.resolve_expr(&mut expr.operator)
+    }
+
+    fn visit_property_access_expr(
+        &mut self,
+        expr: &mut PropertyAccessExpr,
+    ) -> Result<(), RuntimeError> {
+        self.resolve_expr(&mut expr.object)
+    }
+
+    fn visit_property_assignment_expr(
+        &mut self,
+        expr: &mut PropertyAssignmentExpr,
+    ) -> Result<(), RuntimeError> {
+        expr.value.accept(self)?;
+        expr.object.accept(self)?;
+        Ok(())
     }
 }
 

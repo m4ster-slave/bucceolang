@@ -1,4 +1,7 @@
-use crate::callable::CallableObject;
+use crate::{
+    callable::CallableObject,
+    class::{ClassInstance, ClassObject},
+};
 /// Represents the different types of values that can be produced and manipulated by the interpreter.
 ///
 /// These are the runtime values of the language, such as the absence of a value (`Nil`),
@@ -15,7 +18,9 @@ pub enum Object {
     String(String),
     /// Closure or function
     Callable(CallableObject), // hav to use a Rc because the trait size is not known so we cant
-                              // make a deep copy of it
+    // make a deep copy of it
+    Class(ClassObject),
+    ClassInstance(ClassInstance),
 }
 
 impl std::fmt::Display for Object {
@@ -26,6 +31,8 @@ impl std::fmt::Display for Object {
             Object::Number(num) => write!(f, "{}", num),
             Object::String(string) => write!(f, "{}", string),
             Object::Callable(_) => write!(f, "<callable>"),
+            Object::Class(class) => write!(f, "{}", class),
+            Object::ClassInstance(instance) => write!(f, "{}", instance),
         }
     }
 }
@@ -39,6 +46,7 @@ impl PartialEq for Object {
             (Object::String(a), Object::String(b)) => a == b,
             // callable are just never eq
             (Object::Callable(_), Object::Callable(_)) => false,
+            (Object::Class(_), Object::Class(_)) => false,
             _ => false,
         }
     }
