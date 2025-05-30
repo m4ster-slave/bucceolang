@@ -30,7 +30,7 @@ impl std::fmt::Display for Object {
             Object::Boolean(bool) => write!(f, "{}", bool),
             Object::Number(num) => write!(f, "{}", num),
             Object::String(string) => write!(f, "{}", string),
-            Object::Callable(_) => write!(f, "<callable>"),
+            Object::Callable(callable) => write!(f, "{}", callable),
             Object::Class(class) => write!(f, "{}", class),
             Object::ClassInstance(instance) => write!(f, "{}", instance),
         }

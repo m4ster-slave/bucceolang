@@ -1,4 +1,5 @@
 use crate::{interpreter::Interpreter, object::Object, runtime_error::RuntimeError};
+use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use std::cell::RefCell;
@@ -33,9 +34,11 @@ impl ClockFn {
     pub fn arity(&self) -> usize {
         0
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from("<native fn clock>")
+impl Display for ClockFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn clock>")
     }
 }
 
@@ -69,9 +72,11 @@ impl ReadFn {
     pub fn arity(&self) -> usize {
         0
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from("<native fn read>")
+impl Display for ReadFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn read>")
     }
 }
 
@@ -144,9 +149,11 @@ impl RandomFn {
     pub fn arity(&self) -> usize {
         1
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from("<native fn random>")
+impl Display for RandomFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn random>")
     }
 }
 
@@ -191,9 +198,11 @@ impl SinFn {
     pub fn arity(&self) -> usize {
         1
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from("<native fn sin>")
+impl Display for SinFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn sin>")
     }
 }
 
@@ -237,8 +246,10 @@ impl SqrtFn {
     pub fn arity(&self) -> usize {
         1
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from("<native fn sqrt>")
+impl Display for SqrtFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn sqrt>")
     }
 }

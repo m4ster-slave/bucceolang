@@ -1,5 +1,5 @@
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::{cell::RefCell, fmt::Display};
 
 use crate::{
     class::ClassInstance,
@@ -100,9 +100,10 @@ impl Function {
     pub fn arity(&self) -> usize {
         self.declaration.params.len()
     }
+}
 
-    /// Returns a string representation of the function
-    pub fn to_string(&self) -> String {
-        format!("<fn {}>", self.declaration.name.lexeme())
+impl Display for Function {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<fn {}>", self.declaration.name.lexeme())
     }
 }

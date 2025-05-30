@@ -5,6 +5,7 @@ use crate::runtime_error::RuntimeError;
 use crate::Interpreter;
 
 use std::cell::RefCell;
+use std::fmt::Display;
 use std::rc::Rc;
 
 /// Represents any callable entity in the language runtime.
@@ -64,6 +65,19 @@ impl CallableObject {
             CallableObject::RandomFn(nf) => nf.call(interp, args),
             CallableObject::SinFn(nf) => nf.call(interp, args),
             CallableObject::SqrtFn(nf) => nf.call(interp, args),
+        }
+    }
+}
+
+impl Display for CallableObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CallableObject::Function(nf) => write!(f, "{}", nf.borrow()),
+            CallableObject::ClockFn(nf) => write!(f, "{}", nf),
+            CallableObject::ReadFn(nf) => write!(f, "{}", nf),
+            CallableObject::RandomFn(nf) => write!(f, "{}", nf),
+            CallableObject::SinFn(nf) => write!(f, "{}", nf),
+            CallableObject::SqrtFn(nf) => write!(f, "{}", nf),
         }
     }
 }

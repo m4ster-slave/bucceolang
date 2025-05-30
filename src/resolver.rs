@@ -295,12 +295,13 @@ impl Resolver<'_> {
             // last_mut() only ever returns none if the Vec is empty
             None => (),
             Some(scope) => {
-                if scope.contains_key(name.lexeme()) {
-                    return Err(RuntimeError::Other(
-                        name.line(),
-                        "Already a variable with this name in this scope.".to_string(),
-                    ));
-                }
+                // TODO, try to fix this...
+                // if scope.contains_key(name.lexeme()) {
+                //     return Err(RuntimeError::Other(
+                //         name.line(),
+                //         "Already a variable with this name in this scope.".to_string(),
+                //     ));
+                // }
                 scope.insert(name.lexeme().to_owned(), defined);
             }
         };
