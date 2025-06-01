@@ -266,20 +266,21 @@ impl ExprVisitor<Object> for Interpreter {
 
         match callee {
             Object::Callable(func) => {
-                if arguments.len() != func.borrow().arity() {
+                let arity = func.borrow().arity();
+                if arguments.len() != arity {
                     Err(RuntimeError::Other(
                         expr.paren.line(),
                         format!(
                             "Expected {} arguments but got {}.",
-                            func.borrow().arity(),
+                            arity,
                             arguments.len()
                         ),
                     ))
                 } else {
-                    func.borrow_mut().call(self, arguments)
+                    func.borrow().call(self, arguments)
                 }
             }
-            Object::Class(mut class) => {
+            Object::Class(class) => {
                 if arguments.len() != class.arity() {
                     Err(RuntimeError::Other(
                         expr.paren.line(),

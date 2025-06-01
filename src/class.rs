@@ -40,7 +40,7 @@ impl Callable for ClassObject {
     }
 
     fn call(
-        &mut self,
+        &self,
         interp: &mut Interpreter,
         args: Vec<Object>,
     ) -> Result<Object, RuntimeError> {

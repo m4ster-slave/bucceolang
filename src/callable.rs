@@ -6,7 +6,7 @@ use std::fmt::Display;
 pub trait Callable: Display {
     fn arity(&self) -> usize;
     fn call(
-        &mut self,
+        &self,
         interpreter: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>;
@@ -15,8 +15,8 @@ pub trait Callable: Display {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::object::Object;
     use crate::native_functions::{ClockFn, RandomFn};
+    use crate::object::Object;
     use crate::Interpreter;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -43,7 +43,9 @@ mod tests {
 
         assert_eq!(callable.borrow().arity(), 1);
 
-        let result = callable.borrow_mut().call(&mut interp, vec![Object::Number(10.0)]);
+        let result = callable
+            .borrow_mut()
+            .call(&mut interp, vec![Object::Number(10.0)]);
         assert!(result.is_ok());
         if let Ok(Object::Number(n)) = result {
             assert!(

@@ -62,7 +62,7 @@ impl Callable for Function {
     ///
     /// Returns a `Result` containing the return value of the function as an `Object`, or a `RuntimeError` if an error occurs during execution
     fn call(
-        &mut self,
+        &self,
         interpreter: &mut crate::interpreter::Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -81,7 +81,8 @@ impl Callable for Function {
         // replace interpreter's environment with new one
         interpreter.environment = Rc::new(environment.into());
 
-        let return_val = match interpreter.visit_block_stmt(&mut self.declaration.body) {
+        let mut body = self.declaration.body.clone();
+        let return_val = match interpreter.visit_block_stmt(&mut body) {
             Ok(()) => Object::Nil,
             Err(RuntimeError::Return(value)) => value.unwrap_or(Object::Nil),
             Err(e) => return Err(e),

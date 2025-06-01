@@ -22,7 +22,7 @@ pub struct ClockFn;
 
 impl Callable for ClockFn {
     fn call(
-        &mut self,
+        &self,
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -57,7 +57,7 @@ impl Display for ClockFn {
 pub struct ReadFn;
 impl Callable for ReadFn {
     fn call(
-        &mut self,
+        &self,
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -126,7 +126,7 @@ impl RandomFn {
 }
 impl Callable for RandomFn {
     fn call(
-        &mut self,
+        &self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -176,7 +176,7 @@ impl Display for RandomFn {
 pub struct SinFn;
 impl Callable for SinFn {
     fn call(
-        &mut self,
+        &self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
@@ -222,7 +222,7 @@ impl Display for SinFn {
 pub struct SqrtFn;
 impl Callable for SqrtFn {
     fn call(
-        &mut self,
+        &self,
         _interpreter: &mut Interpreter,
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
