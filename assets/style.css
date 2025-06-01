@@ -130,3 +130,12 @@ body {
   min-width: 340px;
   z-index: 200;
 }
+
+ul[role="menubar"] > li > a[href$="documentation.pdf"] {
+  color: inherit;
+  text-decoration: none;
+  font-weight: normal;
+}
+ul[role="menubar"] > li > a[href$="documentation.pdf"]:hover {
+  text-decoration: underline;
+}

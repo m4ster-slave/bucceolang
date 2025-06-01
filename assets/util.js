@@ -78,6 +78,50 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 `.trim();
       break;
+    case 8:
+      text = `
+class Node {
+    fn init(value) {
+        this.value = value;
+        this.next = nil;
+    }
+}
+
+class LinkedList {
+    fn init() {
+        this.head = nil;
+    }
+
+    fn add(value) {
+        var node = Node(value);
+        if (this.head == nil) {
+            this.head = node;
+        } else {
+            var current = this.head;
+            while (current.next != nil) {
+                current = current.next;
+            }
+            current.next = node;
+        }
+    }
+
+    fn print_list() {
+        var current = this.head;
+        while (current != nil) {
+            print current.value;
+            current = current.next;
+        }
+    }
+}
+
+var list = LinkedList();
+list.add(1);
+list.add(2);
+list.add(3);
+list.print_list();
+
+`.trim();
+      break;
     default:
       text = 'print "Invalid example selected.";';
   }
