@@ -5,7 +5,7 @@ mod test {
     use crate::resolver::Resolver;
     use crate::scanner::tokenize;
 
-    use std::{cell::RefCell, collections::HashMap, rc::Rc, str};
+    use std::{cell::RefCell, rc::Rc, str};
 
     #[test]
     fn test_recursive_function_fibonacci() {

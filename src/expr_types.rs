@@ -241,7 +241,10 @@ impl PartialEq for Expr {
             (Binary(a), Binary(b)) => {
                 a.left == b.left && a.right == b.right && a.operator.lexeme() == b.operator.lexeme()
             }
-            (Variable(a), Variable(b)) => a.name.literal() == b.name.literal(),
+            (Variable(a), Variable(b)) => {
+                a.name.literal() == b.name.literal()
+                    && a.name.token_number() == b.name.token_number()
+            }
             (Assign(a), Assign(b)) => a.name.literal() == b.name.literal() && a.value == b.value,
             (Logical(a), Logical(b)) => {
                 a.left == b.left && a.right == b.right && a.operator.lexeme() == b.operator.lexeme()
@@ -253,10 +256,12 @@ impl PartialEq for Expr {
                         .zip(b.arguments.clone())
                         .all(|(a_e, b_e)| *a_e == b_e)
             }
+            (PropertyAssignment(a), PropertyAssignment(b)) => a.name.lexeme() == b.name.lexeme(),
+            (PropertyAccess(a), PropertyAccess(b)) => a.name.lexeme() == b.name.lexeme(),
             (This(a), This(b)) => {
-                a.keyword.token_number() == b.keyword.token_number() &&
-                a.keyword.line() == b.keyword.line() &&
-                a.keyword.lexeme() == b.keyword.lexeme()
+                a.keyword.token_number() == b.keyword.token_number()
+                    && a.keyword.line() == b.keyword.line()
+                    && a.keyword.lexeme() == b.keyword.lexeme()
             }
             _ => false,
         }
