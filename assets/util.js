@@ -7,7 +7,7 @@ window.setExample = function (example) {
     case 2:
       text = `
 fn greet(name) {
-  print "Hello, " + name + "!";
+  print "Hello from " + name + "!";
 }
 
 greet("Bucceolang");
@@ -23,16 +23,16 @@ for (var i = 1; i <= 5; i = i + 1) {
     case 4:
       text = `
 class Person {
-  init(name) {
+  fn init(name) {
     this.name = name;
   }
 
-  greet() {
+  fn greet() {
     print "Hi, I'm " + this.name + ".";
   }
 }
 
-var alice = Person("Alice");
+var alice = Person("Tobias");
 alice.greet();
 `.trim();
       break;
@@ -56,13 +56,25 @@ counter();
       text = `
 var a = "global";
 {
-  fun showA() {
+  fn showA() {
     print a;
   }
 
   showA();
   var a = "block";
   showA();
+}
+`.trim();
+      break;
+    case 7:
+      text = `
+fn fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+for (var i = 0; i < 10; i = i + 1) {
+    print fib(i);
 }
 `.trim();
       break;
