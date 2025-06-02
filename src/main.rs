@@ -124,7 +124,7 @@ fn run_repl() -> ExitCode {
     let mut interpreter = Interpreter::new();
 
     loop {
-        print!("> ");
+        print!("\x1b[35;9m>>>\x1b[0m ");
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -144,11 +144,8 @@ fn run_repl() -> ExitCode {
 
                 let mut stmts = match parse(tokens) {
                     Ok(e) => e,
-                    Err(errors) => {
+                    Err(_) => {
                         // Handle parsing errors but continue REPL
-                        for error in errors {
-                            eprintln!("Parse error: {:?}", error);
-                        }
                         continue;
                     }
                 };
@@ -156,13 +153,13 @@ fn run_repl() -> ExitCode {
                 match interpreter.interprete(&mut stmts) {
                     Ok(_) => {}
                     Err(err) => {
-                        eprintln!("Runtime Error: {}", err);
+                        eprintln!("\x1b[31;49;1mRuntime Error: \x1b[0m{}", err);
                         // Continue REPL even after runtime errors
                     }
                 }
             }
             Err(error) => {
-                eprintln!("Error reading input: {}", error);
+                eprintln!("\x1b[31;49;1mError reading input: \x1b[0m{}", error);
                 return ExitCode::from(74);
             }
         }
