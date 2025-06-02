@@ -9,6 +9,7 @@ use crate::{
 enum ClassType {
     None,
     Class,
+    Subclass,
 }
 
 enum FunctionType {
@@ -155,6 +156,7 @@ impl StmtVisitor<()> for Resolver<'_> {
                 ));
             }
 
+            self.current_class = ClassType::Subclass;
             self.resolve_expr(&mut Expr::Variable(superclass.clone()))?;
 
             self.begin_scope()?;
@@ -276,7 +278,19 @@ impl ExprVisitor<()> for Resolver<'_> {
     }
 
     fn visit_super_expr(&mut self, expr: &mut SuperExpr) -> Result<(), RuntimeError> {
-        self.resolve_local(Expr::Super(expr.clone()), &expr.keyword)
+        if let ClassType::None = self.current_class {
+            Err(RuntimeError::resolver_error(
+                expr.keyword.line(),
+                "Can't use 'super' outside of a class.",
+            ))
+        } else if let ClassType::Subclass = self.current_class {
+            self.resolve_local(Expr::Super(expr.clone()), &expr.keyword)
+        } else {
+            Err(RuntimeError::resolver_error(
+                expr.keyword.line(),
+                "Can't use 'super' in a class with no superclass.",
+            ))
+        }
     }
 }
 
