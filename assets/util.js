@@ -122,6 +122,25 @@ list.print_list();
 
 `.trim();
       break;
+    case 9:
+      text = `
+class Doughnut {
+  fn cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonKreme < Doughnut {
+  fn cook() {
+    super.cook();
+    print "I LOVE BOSTON";
+  }
+}
+
+BostonKreme().cook();
+`.trim();
+      break;
+
     default:
       text = 'print "Invalid example selected.";';
   }

@@ -274,6 +274,16 @@ For the best development experience:
 - Use neovim
 
 == Language Features
+=== Keywords
+
+Bucceolang includes special keywords that provide specific functionality within the language.
+
+==== this
+The `this` keyword is used within class methods to refer to the current instance of the class. It allows access to the instance's variables and methods. 
+
+==== super
+The `super` keyword is used in class inheritance to call methods of the parent class. It allows a subclass to access and extend the functionality of its superclass.
+
 === Types
 Bucceolang provides a rich set of built-in types to support various programming needs:
 
