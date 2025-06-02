@@ -146,6 +146,18 @@ impl StmtVisitor<()> for Resolver<'_> {
         self.current_class = ClassType::Class;
 
         self.declare(&stmt.name, false)?;
+
+        if let Some(superclass) = &stmt.superclass {
+            if stmt.name.lexeme() == superclass.name.lexeme() {
+                return Err(RuntimeError::other(
+                    superclass.name.line(),
+                    "A class can't inherit from itself.",
+                ));
+            }
+
+            self.resolve_expr(&mut Expr::Variable(superclass.clone()))?
+        }
+
         self.begin_scope()?;
 
         self.scopes

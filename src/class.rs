@@ -13,19 +13,36 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct ClassObject {
     pub name: String,
+    pub superclass: Option<Box<Object>>,
     pub methods: HashMap<String, Function>,
 }
 
 impl ClassObject {
-    pub fn new(name: &str, methods: HashMap<String, Function>) -> Self {
+    pub fn new(
+        name: &str,
+        superclass: Option<Box<Object>>,
+        methods: HashMap<String, Function>,
+    ) -> Self {
         Self {
             name: name.into(),
+            superclass,
             methods,
         }
     }
 
     fn find_method(&self, name: &str) -> Option<Function> {
-        self.methods.get(name).cloned()
+        if let Some(method) = self.methods.get(name) {
+            return Some(method.clone());
+        }
+
+        if let Some(superclass) = &self.superclass {
+            match **superclass {
+                Object::Class(ref class) => class.find_method(name),
+                _ => None,
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -39,11 +56,7 @@ impl Callable for ClassObject {
         }
     }
 
-    fn call(
-        &self,
-        interp: &mut Interpreter,
-        args: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
+    fn call(&self, interp: &mut Interpreter, args: Vec<Object>) -> Result<Object, RuntimeError> {
         let instance = ClassInstance::new(self.clone());
 
         if let Some(init) = self.find_method("init") {

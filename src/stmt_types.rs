@@ -1,3 +1,4 @@
+use crate::expr_types::VariableExpr;
 use crate::Token;
 use crate::{expr_types::Expr, runtime_error::RuntimeError};
 
@@ -139,5 +140,6 @@ pub struct ReturnStmt {
 #[derive(Debug, Clone)]
 pub struct ClassStmt {
     pub name: Token,
+    pub superclass: Option<VariableExpr>,
     pub methods: Vec<FunctionStmt>,
 }

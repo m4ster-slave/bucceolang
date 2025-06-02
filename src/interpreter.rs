@@ -273,11 +273,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if arguments.len() != arity {
                     Err(RuntimeError::argument_error(
                         expr.paren.line(),
-                        format!(
-                            "Expected {} arguments but got {}.",
-                            arity,
-                            arguments.len()
-                        ),
+                        format!("Expected {} arguments but got {}.", arity, arguments.len()),
                     ))
                 } else {
                     func.borrow().call(self, arguments)
@@ -439,6 +435,19 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn visit_class_stmt(&mut self, stmt: &mut ClassStmt) -> Result<(), RuntimeError> {
+        let mut superclass: Option<Box<Object>> = None;
+        if let Some(s) = &stmt.superclass {
+            superclass = match Expr::Variable(s.clone()).accept(self)? {
+                Object::Class(supclss) => Some(Box::new(Object::Class(supclss))),
+                _ => {
+                    return Err(RuntimeError::type_error(
+                        stmt.name.line(),
+                        "Superclass must be a class.",
+                    ))
+                }
+            }
+        }
+
         self.environment
             .borrow_mut()
             .define(stmt.name.lexeme().into(), Object::Nil)?;
@@ -455,7 +464,7 @@ impl StmtVisitor<()> for Interpreter {
             );
         }
 
-        let class = ClassObject::new(stmt.name.lexeme(), methods);
+        let class = ClassObject::new(stmt.name.lexeme(), superclass, methods);
 
         self.environment
             .borrow_mut()
