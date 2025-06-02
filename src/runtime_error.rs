@@ -54,19 +54,6 @@ impl RuntimeError {
     }
 }
 
-/// Helper function to construct a runtime error from a kind string (legacy support).
-pub fn runtime_error(kind: &str, line: usize, message: impl Into<String>) -> RuntimeError {
-    let msg = message.into();
-    match kind {
-        "TypeError" => RuntimeError::type_error(line, msg),
-        "DivisionByZero" => RuntimeError::division_by_zero(line, msg),
-        "UndefinedVariable" => RuntimeError::undefined_variable(line, msg),
-        "ArgumentError" => RuntimeError::argument_error(line, msg),
-        "Resolver" => RuntimeError::resolver_error(line, msg),
-        _ => RuntimeError::other(line, msg),
-    }
-}
-
 impl std::fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
