@@ -131,7 +131,10 @@ impl Callable for RandomFn {
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let range_obj = arguments.pop().ok_or_else(|| {
-            RuntimeError::other(0, "not enough arguments in function".to_string() + &self.to_string())
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
         })?;
 
         if let Object::Number(max) = range_obj {
@@ -142,7 +145,10 @@ impl Callable for RandomFn {
             let result = (rand_value as f64 % max).floor();
             Ok(Object::Number(result))
         } else {
-            Err(RuntimeError::other(0, "argument must be a number".to_string()))
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
         }
     }
 
@@ -181,14 +187,20 @@ impl Callable for SinFn {
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let arg = arguments.pop().ok_or_else(|| {
-            RuntimeError::other(0, "not enough arguments in function".to_string() + &self.to_string())
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
         })?;
 
         if let Object::Number(num) = arg {
             // sin is rad
             Ok(Object::Number(num.sin()))
         } else {
-            Err(RuntimeError::other(0, "argument must be a number".to_string()))
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
         }
     }
 
@@ -227,13 +239,19 @@ impl Callable for SqrtFn {
         mut arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let arg = arguments.pop().ok_or_else(|| {
-            RuntimeError::other(0, "not enough arguments in function".to_string() + &self.to_string())
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
         })?;
 
         if let Object::Number(num) = arg {
             Ok(Object::Number(num.sqrt()))
         } else {
-            Err(RuntimeError::other(0, "argument must be a number".to_string()))
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
         }
     }
 

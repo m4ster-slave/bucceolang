@@ -22,6 +22,7 @@ pub enum Expr {
     PropertyAccess(PropertyAccessExpr),
     PropertyAssignment(PropertyAssignmentExpr),
     This(ThisExpr),
+    Super(SuperExpr),
 }
 
 /// Defines the visitor trait for traversing the `Expr` abstract syntax tree.
@@ -109,6 +110,7 @@ pub trait ExprVisitor<T> {
         expr: &mut PropertyAssignmentExpr,
     ) -> Result<T, RuntimeError>;
     fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<T, RuntimeError>;
+    fn visit_super_expr(&mut self, expr: &mut SuperExpr) -> Result<T, RuntimeError>;
 }
 
 impl Expr {
@@ -141,6 +143,7 @@ impl Expr {
             Expr::PropertyAccess(expr) => visitor.visit_property_access_expr(expr),
             Expr::PropertyAssignment(expr) => visitor.visit_property_assignment_expr(expr),
             Expr::This(expr) => visitor.visit_this_expr(expr),
+            Expr::Super(expr) => visitor.visit_super_expr(expr),
         }
     }
 }
@@ -227,6 +230,12 @@ pub struct ThisExpr {
     pub keyword: Token,
 }
 
+#[derive(Debug, Clone)]
+pub struct SuperExpr {
+    pub keyword: Token,
+    pub method: Token,
+}
+
 use std::hash::{Hash, Hasher};
 
 impl PartialEq for Expr {
@@ -262,6 +271,14 @@ impl PartialEq for Expr {
                 a.keyword.token_number() == b.keyword.token_number()
                     && a.keyword.line() == b.keyword.line()
                     && a.keyword.lexeme() == b.keyword.lexeme()
+            }
+            (Super(a), Super(b)) => {
+                a.keyword.token_number() == b.keyword.token_number()
+                    && a.keyword.line() == b.keyword.line()
+                    && a.keyword.lexeme() == b.keyword.lexeme()
+                    && a.method.line() == b.method.line()
+                    && a.method.lexeme() == b.method.lexeme()
+                    && a.method.token_number() == b.method.token_number()
             }
             _ => false,
         }
@@ -328,6 +345,14 @@ impl Hash for Expr {
                 expr.keyword.token_number().hash(state);
                 expr.keyword.line().hash(state);
                 expr.keyword.lexeme().hash(state);
+            }
+            Expr::Super(expr) => {
+                expr.keyword.token_number().hash(state);
+                expr.keyword.line().hash(state);
+                expr.keyword.lexeme().hash(state);
+                expr.method.token_number().hash(state);
+                expr.method.line().hash(state);
+                expr.method.lexeme().hash(state);
             }
         }
     }

@@ -10,7 +10,7 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct Environment {
     /// Optional reference to the enclosing (parent) environment
-    enclosing: Option<Rc<RefCell<Environment>>>,
+    pub enclosing: Option<Rc<RefCell<Environment>>>,
     /// Mapping of variable names to their values in the current scope
     pub values: HashMap<String, Object>,
 }

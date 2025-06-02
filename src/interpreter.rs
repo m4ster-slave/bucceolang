@@ -337,6 +337,48 @@ impl ExprVisitor<Object> for Interpreter {
     fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<Object, RuntimeError> {
         self.look_up_variable(&expr.keyword, Expr::This(expr.clone()))
     }
+
+    fn visit_super_expr(&mut self, expr: &mut SuperExpr) -> Result<Object, RuntimeError> {
+        let distance = self.locals.get(&Expr::Super(expr.clone())).unwrap();
+
+        let superclass = self
+            .environment
+            .borrow_mut()
+            .get_at(&distance, "super".to_string())?;
+
+        let obj = self
+            .environment
+            .borrow_mut()
+            .get_at(&(distance - 1), "this".to_string())?;
+
+        let method = match superclass {
+            Object::Class(supclss) => match supclss.find_method(expr.method.lexeme()) {
+                Some(sc) => sc,
+                None => {
+                    return Err(RuntimeError::undefined_variable(
+                        expr.keyword.line(),
+                        format!("Undefinded property '{}'.", expr.method.lexeme()),
+                    ))
+                }
+            },
+            _ => {
+                return Err(RuntimeError::undefined_variable(
+                    expr.keyword.line(),
+                    "Superclass is not a class somehow???.",
+                ))
+            }
+        };
+
+        match obj {
+            Object::ClassInstance(ci) => {
+                Ok(Object::Callable(Rc::new(RefCell::new(method.bind(ci)?))))
+            }
+            _ => Err(RuntimeError::undefined_variable(
+                expr.keyword.line(),
+                "'this' is not a class instance",
+            )),
+        }
+    }
 }
 
 impl StmtVisitor<()> for Interpreter {
@@ -452,6 +494,16 @@ impl StmtVisitor<()> for Interpreter {
             .borrow_mut()
             .define(stmt.name.lexeme().into(), Object::Nil)?;
 
+        if let Some(supclss) = &superclass {
+            self.environment = Rc::new(RefCell::new(Environment::new_enclosed(
+                self.environment.clone(),
+            )));
+
+            self.environment
+                .borrow_mut()
+                .define("super".to_string(), *supclss.clone())?;
+        }
+
         let mut methods: HashMap<String, Function> = HashMap::new();
         for method in &mut stmt.methods {
             methods.insert(
@@ -465,6 +517,11 @@ impl StmtVisitor<()> for Interpreter {
         }
 
         let class = ClassObject::new(stmt.name.lexeme(), superclass, methods);
+
+        if stmt.superclass.is_some() {
+            let new_env = self.environment.borrow().enclosing.clone().unwrap();
+            self.environment = new_env;
+        }
 
         self.environment
             .borrow_mut()

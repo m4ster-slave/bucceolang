@@ -155,7 +155,13 @@ impl StmtVisitor<()> for Resolver<'_> {
                 ));
             }
 
-            self.resolve_expr(&mut Expr::Variable(superclass.clone()))?
+            self.resolve_expr(&mut Expr::Variable(superclass.clone()))?;
+
+            self.begin_scope()?;
+            self.scopes
+                .last_mut()
+                .unwrap()
+                .insert("super".to_string(), true);
         }
 
         self.begin_scope()?;
@@ -177,6 +183,11 @@ impl StmtVisitor<()> for Resolver<'_> {
 
         self.end_scope()?;
         self.current_class = enclosing_class;
+
+        if stmt.superclass.is_some() {
+            self.end_scope()?;
+        }
+
         self.declare(&stmt.name, true)
     }
 }
@@ -262,6 +273,10 @@ impl ExprVisitor<()> for Resolver<'_> {
         }
 
         self.resolve_local(Expr::This(expr.clone()), &expr.keyword)
+    }
+
+    fn visit_super_expr(&mut self, expr: &mut SuperExpr) -> Result<(), RuntimeError> {
+        self.resolve_local(Expr::Super(expr.clone()), &expr.keyword)
     }
 }
 

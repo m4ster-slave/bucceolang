@@ -30,7 +30,7 @@ impl ClassObject {
         }
     }
 
-    fn find_method(&self, name: &str) -> Option<Function> {
+    pub fn find_method(&self, name: &str) -> Option<Function> {
         if let Some(method) = self.methods.get(name) {
             return Some(method.clone());
         }

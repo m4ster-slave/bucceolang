@@ -281,6 +281,17 @@ impl Parser {
                 keyword: self.previous().clone(),
             }));
         }
+        if self.match_token(TokenType::Super) {
+            let keyword = self.previous().clone();
+
+            self.consume(TokenType::Dot, "Expect '.' after 'super'.")?;
+
+            let method = self
+                .consume(TokenType::Var, "Expect superclass method name.")?
+                .clone();
+
+            return Ok(Expr::Super(SuperExpr { keyword, method }));
+        }
         if self.match_token(TokenType::LeftParen) {
             let _paren_open = self.previous().clone();
             let expr = self.expression().inspect_err(|_| {
