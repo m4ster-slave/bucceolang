@@ -612,7 +612,10 @@ impl Parser {
 
         let mut methods: Vec<FunctionStmt> = Vec::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
-            if let Stmt::Function(method) = self.function("method")? {
+            // Check for static keyword before fn
+            let is_static = self.match_token(TokenType::Static);
+            if let Stmt::Function(mut method) = self.function("method")? {
+                method.is_static = is_static;
                 methods.push(method);
             } else {
                 return Err(error(
@@ -691,6 +694,7 @@ impl Parser {
             name,
             params,
             body: body_stmts,
+            is_static: false, // Default to false, will be updated by class_declaration if needed
         }))
     }
 

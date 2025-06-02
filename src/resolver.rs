@@ -167,7 +167,8 @@ impl StmtVisitor<()> for Resolver<'_> {
         }
 
         self.begin_scope()?;
-
+        
+        // Only add 'this' binding for non-static methods
         self.scopes
             .last_mut()
             .unwrap()
@@ -179,8 +180,15 @@ impl StmtVisitor<()> for Resolver<'_> {
             if method.name.lexeme().eq("init") {
                 declaration = FunctionType::Initializer;
             }
-
-            self.resolve_function(method, declaration)?;
+            
+            // Don't allow accessing 'this' in static methods
+            if method.is_static {
+                self.scopes.last_mut().unwrap().remove("this");
+                self.resolve_function(method, declaration)?;
+                self.scopes.last_mut().unwrap().insert("this".to_string(), true);
+            } else {
+                self.resolve_function(method, declaration)?;
+            }
         }
 
         self.end_scope()?;

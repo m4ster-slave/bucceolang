@@ -124,6 +124,8 @@ pub struct FunctionStmt {
     pub params: Vec<Token>,
     /// The body of the function as a list of statements.
     pub body: Vec<Stmt>,
+    /// Whether this function is static.
+    pub is_static: bool,
 }
 
 /// Represents a return statement in a function.

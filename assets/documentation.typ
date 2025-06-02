@@ -375,6 +375,21 @@ class Person {
 - *Instance Methods*: Methods can access instance variables through `this`
 - *Instance Variables*: Dynamic creation of instance variables
 - *Method Calls*: Methods are called using dot notation
+- *Static Methods*: Methods declared with the `static` keyword belong to the class itself, not instances
+
+==== Static Methods
+Methods in a class can be declared as static using the `static` keyword before the method declaration. Static methods belong to the class itself rather than instances of the class. They can be called on the class directly without creating an instance.
+
+Example:
+```
+class MathUtils {
+    static fn square(x) {
+        return x * x;
+    }
+}
+
+print MathUtils.square(5); // Prints: 25
+```
 
 ==== Usage Example
 ```

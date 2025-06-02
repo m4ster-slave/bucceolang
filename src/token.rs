@@ -53,6 +53,7 @@ pub enum TokenType {
     Break,
     Continue,
     Class,
+    Static,
 
     // Identifier
     Var, // Represents a variable or identifier name

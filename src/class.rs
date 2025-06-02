@@ -15,6 +15,8 @@ pub struct ClassObject {
     pub name: String,
     pub superclass: Option<Box<Object>>,
     pub methods: HashMap<String, Function>,
+    #[allow(dead_code)]
+    pub static_methods: HashMap<String, Function>,
 }
 
 impl ClassObject {
@@ -23,10 +25,23 @@ impl ClassObject {
         superclass: Option<Box<Object>>,
         methods: HashMap<String, Function>,
     ) -> Self {
+        // Split methods into instance methods and static methods
+        let mut instance_methods = HashMap::new();
+        let mut static_methods = HashMap::new();
+        
+        for (name, method) in methods {
+            if method.declaration.is_static {
+                static_methods.insert(name, method);
+            } else {
+                instance_methods.insert(name, method);
+            }
+        }
+
         Self {
             name: name.into(),
             superclass,
-            methods,
+            methods: instance_methods,
+            static_methods,
         }
     }
 
@@ -38,6 +53,22 @@ impl ClassObject {
         if let Some(superclass) = &self.superclass {
             match **superclass {
                 Object::Class(ref class) => class.find_method(name),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn find_static_method(&self, name: &str) -> Option<Function> {
+        if let Some(method) = self.static_methods.get(name) {
+            return Some(method.clone());
+        }
+
+        if let Some(superclass) = &self.superclass {
+            match **superclass {
+                Object::Class(ref class) => class.find_static_method(name),
                 _ => None,
             }
         } else {

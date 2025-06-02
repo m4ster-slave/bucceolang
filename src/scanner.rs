@@ -524,6 +524,13 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, ScannerError> {
                             line_number,
                             token_number,
                         )),
+                        "static" => out.push(Token::new(
+                            TokenType::Static,
+                            "static",
+                            None,
+                            line_number,
+                            token_number,
+                        )),
                         _ => {
                             out.push(Token::new(
                                 TokenType::Var,

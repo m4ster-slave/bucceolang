@@ -306,13 +306,23 @@ impl ExprVisitor<Object> for Interpreter {
     ) -> Result<Object, RuntimeError> {
         let object = expr.object.accept(self)?;
 
-        if let Object::ClassInstance(instance) = object {
-            instance.get(expr.name.clone())
-        } else {
-            Err(RuntimeError::type_error(
+        match object {
+            Object::ClassInstance(instance) => instance.get(expr.name.clone()),
+            Object::Class(class) => {
+                // Try to find static method
+                if let Some(method) = class.find_static_method(expr.name.lexeme()) {
+                    Ok(Object::Callable(Rc::new(RefCell::new(method))))
+                } else {
+                    Err(RuntimeError::undefined_variable(
+                        expr.name.line(),
+                        format!("Undefined static property '{}'.", expr.name.lexeme()),
+                    ))
+                }
+            }
+            _ => Err(RuntimeError::type_error(
                 expr.name.line(),
-                "Only instances have properties.".to_string(),
-            ))
+                "Only instances and classes have properties.",
+            )),
         }
     }
 
@@ -523,9 +533,21 @@ impl StmtVisitor<()> for Interpreter {
             self.environment = new_env;
         }
 
-        self.environment
-            .borrow_mut()
-            .assign(&stmt.name, &Object::Class(class))?;
+        // Add static methods to global environment
+        let mut env = self.environment.borrow_mut();
+        for method in &mut stmt.methods {
+            if method.is_static {
+                let function = Function {
+                    declaration: method.clone(),
+                    closure: self.environment.clone(),
+                    is_initializer: false,
+                };
+                let full_name = format!("{}.{}", stmt.name.lexeme(), method.name.lexeme());
+                env.define(full_name, Object::Callable(Rc::new(RefCell::new(function))))?;
+            }
+        }
+
+        env.assign(&stmt.name, &Object::Class(class))?;
         Ok(())
     }
 }
