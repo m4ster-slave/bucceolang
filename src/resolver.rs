@@ -92,7 +92,7 @@ impl StmtVisitor<()> for Resolver<'_> {
 
     fn visit_return_stmt(&mut self, stmt: &mut ReturnStmt) -> Result<(), RuntimeError> {
         if let FunctionType::None = self.current_function {
-            return Err(RuntimeError::Other(
+            return Err(RuntimeError::other(
                 stmt.keyword.line(),
                 "Can't return from top-level code.".to_string(),
             ));
@@ -100,7 +100,7 @@ impl StmtVisitor<()> for Resolver<'_> {
 
         if let Some(ret) = &mut stmt.value {
             if let FunctionType::Initializer = self.current_function {
-                return Err(RuntimeError::Other(
+                return Err(RuntimeError::other(
                     stmt.keyword.line(),
                     "Can't return a value from an initializer.".to_string(),
                 ));
@@ -121,7 +121,7 @@ impl StmtVisitor<()> for Resolver<'_> {
 
     fn visit_continue_stmt(&mut self) -> Result<(), RuntimeError> {
         if self.loop_depth == 0 {
-            Err(RuntimeError::Other(
+            Err(RuntimeError::other(
                 0,
                 "Cannot use 'continue' outside of a loop.".to_string(),
             ))
@@ -132,7 +132,7 @@ impl StmtVisitor<()> for Resolver<'_> {
 
     fn visit_break_stmt(&mut self) -> Result<(), RuntimeError> {
         if self.loop_depth == 0 {
-            Err(RuntimeError::Other(
+            Err(RuntimeError::other(
                 0,
                 "Cannot use 'break' outside of a loop.".to_string(),
             ))
@@ -177,7 +177,7 @@ impl ExprVisitor<()> for Resolver<'_> {
             .and_then(|scope| scope.get(expr.name.lexeme()))
             .is_some_and(|defined| !*defined)
         {
-            return Err(RuntimeError::Resolver(
+            return Err(RuntimeError::resolver_error(
                 expr.name.line(),
                 "Can't read local variable in its own initializer.".to_owned(),
             ));
@@ -243,7 +243,7 @@ impl ExprVisitor<()> for Resolver<'_> {
 
     fn visit_this_expr(&mut self, expr: &mut ThisExpr) -> Result<(), RuntimeError> {
         if let ClassType::None = self.current_class {
-            return Err(RuntimeError::UndefinedVariable(
+            return Err(RuntimeError::undefined_variable(
                 expr.keyword.line(),
                 "Can't use 'this' outside of a class.".to_string(),
             ));

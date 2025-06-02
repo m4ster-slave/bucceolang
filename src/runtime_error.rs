@@ -3,61 +3,106 @@ use crate::object::Object;
 /// Represents errors that can occur during the runtime execution of the code.
 #[derive(Debug, Clone)]
 pub enum RuntimeError {
-    /// Indicates a type mismatch error.
-    /// The first element is the line number where the error occurred.
-    /// The second element is a descriptive error message.
-    TypeError(usize, String),
-
-    /// Indicates an attempt to divide by zero.
-    /// The element is the line number where the division by zero occurred.
-    DivisionByZero(usize),
-
-    /// Indicates that a variable was accessed before it was defined.
-    /// The first element is the line number where the undefined variable was used.
-    /// The second element is the name of the undefined variable.
-    UndefinedVariable(usize, String),
-
-    /// Represents any other runtime error not covered by specific variants.
-    /// The first element is the line number where the error occurred.
-    /// The second element is a descriptive error message.
-    Other(usize, String),
-    /// special error type thats used to propagate the the return value of functions thru the
-    /// callstack, it gets caught by the 'Call()' function
+    TypeError { line: usize, message: String },
+    DivisionByZero { line: usize, message: String },
+    UndefinedVariable { line: usize, message: String },
+    ArgumentError { line: usize, message: String },
+    Resolver { line: usize, message: String },
+    Other { line: usize, message: String },
     Return(Option<Object>),
     Break,
     Continue,
-    Resolver(usize, String),
+}
+
+// Error constructor functions for each error type
+impl RuntimeError {
+    pub fn type_error(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::TypeError {
+            line,
+            message: message.into(),
+        }
+    }
+    pub fn division_by_zero(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::DivisionByZero {
+            line,
+            message: message.into(),
+        }
+    }
+    pub fn undefined_variable(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::UndefinedVariable {
+            line,
+            message: message.into(),
+        }
+    }
+    pub fn argument_error(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::ArgumentError {
+            line,
+            message: message.into(),
+        }
+    }
+    pub fn resolver_error(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::Resolver {
+            line,
+            message: message.into(),
+        }
+    }
+    pub fn other(line: usize, message: impl Into<String>) -> Self {
+        RuntimeError::Other {
+            line,
+            message: message.into(),
+        }
+    }
+}
+
+/// Helper function to construct a runtime error from a kind string (legacy support).
+pub fn runtime_error(kind: &str, line: usize, message: impl Into<String>) -> RuntimeError {
+    let msg = message.into();
+    match kind {
+        "TypeError" => RuntimeError::type_error(line, msg),
+        "DivisionByZero" => RuntimeError::division_by_zero(line, msg),
+        "UndefinedVariable" => RuntimeError::undefined_variable(line, msg),
+        "ArgumentError" => RuntimeError::argument_error(line, msg),
+        "Resolver" => RuntimeError::resolver_error(line, msg),
+        _ => RuntimeError::other(line, msg),
+    }
 }
 
 impl std::fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            RuntimeError::TypeError(line, msg) => write!(
+            RuntimeError::TypeError { line, message } => write!(
                 f,
                 "\x1b[31;49;1m[line: {}] Type Error: {}\x1b[0m",
-                line, msg
+                line, message
             ),
-            RuntimeError::DivisionByZero(line) => {
-                write!(f, "\x1b[31;49;1m[line: {}] Division by zero\x1b[0m", line)
-            }
-            RuntimeError::UndefinedVariable(line, name) => {
-                write!(
-                    f,
-                    "\x1b[31;49;1m[line: {}] Undefined variable: {}\x1b[0m",
-                    line, name
-                )
-            }
-            RuntimeError::Other(line, msg) => write!(
+            RuntimeError::DivisionByZero { line, message } => write!(
                 f,
-                "\x1b[31;49;1m[line: {}] Runtime Error: {}\x1b[0m",
-                line, msg
+                "\x1b[31;49;1m[line: {}] Division by zero: {}\x1b[0m",
+                line, message
             ),
-            RuntimeError::Resolver(line, msg) => write!(
+            RuntimeError::UndefinedVariable { line, message } => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Undefined variable: {}\x1b[0m",
+                line, message
+            ),
+            RuntimeError::ArgumentError { line, message } => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Argument Error: {}\x1b[0m",
+                line, message
+            ),
+            RuntimeError::Resolver { line, message } => write!(
                 f,
                 "\x1b[31;49;1m[line: {}] Resolver Error: {}\x1b[0m",
-                line, msg
+                line, message
             ),
-            _ => write!(f, "\x1b[31;49;1mshould be a error\x1b[0m"),
+            RuntimeError::Other { line, message } => write!(
+                f,
+                "\x1b[31;49;1m[line: {}] Runtime Error: {}\x1b[0m",
+                line, message
+            ),
+            RuntimeError::Return(_) => write!(f, "<return>"),
+            RuntimeError::Break => write!(f, "<break>"),
+            RuntimeError::Continue => write!(f, "<continue>"),
         }
     }
 }

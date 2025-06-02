@@ -85,7 +85,7 @@ impl ClassInstance {
                     Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(bound_method)))),
                     Err(e) => Err(e),
                 },
-                None => Err(RuntimeError::UndefinedVariable(
+                None => Err(RuntimeError::undefined_variable(
                     name.line(),
                     format!("Undefined property '{}'.", name.lexeme()),
                 )),

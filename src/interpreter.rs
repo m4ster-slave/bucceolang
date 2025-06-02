@@ -46,20 +46,20 @@ impl ExprVisitor<Object> for Interpreter {
                 Some(obj) => Ok(obj.clone()),
                 None => match expr.literal.token_type() {
                     TokenType::String => Ok(Object::String("".to_string())),
-                    TokenType::Number => Err(RuntimeError::TypeError(
+                    TokenType::Number => Err(RuntimeError::type_error(
                         expr.literal.line(),
                         "Expected a number literal, but found none.".to_string(),
                     )),
                     TokenType::True => Ok(Object::Boolean(true)),
                     TokenType::False => Ok(Object::Boolean(false)),
                     TokenType::Nil => Ok(Object::Nil),
-                    _ => Err(RuntimeError::TypeError(
+                    _ => Err(RuntimeError::type_error(
                         expr.literal.line(),
                         "Unhandled literal type".to_string(),
                     )),
                 },
             },
-            _ => Err(RuntimeError::TypeError(
+            _ => Err(RuntimeError::type_error(
                 expr.literal.line(),
                 "Not a valid literal to be parsed".to_string(),
             )),
@@ -86,7 +86,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let Object::Number(value) = right {
                     Ok(Object::Number(-value))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.prefix.line(),
                         "Operand must be a number".to_string(),
                     ))
@@ -108,7 +108,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Number(left_val - right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands musst be numbers".to_string(),
                     ))
@@ -126,7 +126,7 @@ impl ExprVisitor<Object> for Interpreter {
                 (left_val, Object::String(right_val)) => {
                     Ok(Object::String(format!("{}{}", left_val, right_val)))
                 }
-                _ => Err(RuntimeError::TypeError(
+                _ => Err(RuntimeError::type_error(
                     expr.operator.line(),
                     format!(
                         "Cannot add {} and {}",
@@ -154,11 +154,14 @@ impl ExprVisitor<Object> for Interpreter {
             TokenType::Slash => {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     if *right_val == 0.0 {
-                        return Err(RuntimeError::DivisionByZero(expr.operator.line()));
+                        return Err(RuntimeError::division_by_zero(
+                            expr.operator.line(),
+                            "Division by zero",
+                        ));
                     }
                     Ok(Object::Number(left_val / right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operand must be numbersr".to_string(),
                     ))
@@ -168,7 +171,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Number(left_val * right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
@@ -180,7 +183,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val > right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
@@ -190,7 +193,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val >= right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
@@ -200,7 +203,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val < right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
@@ -210,7 +213,7 @@ impl ExprVisitor<Object> for Interpreter {
                 if let (Object::Number(left_val), Object::Number(right_val)) = (&left, &right) {
                     Ok(Object::Boolean(left_val <= right_val))
                 } else {
-                    Err(RuntimeError::TypeError(
+                    Err(RuntimeError::type_error(
                         expr.operator.line(),
                         "Operands must be numbers".to_string(),
                     ))
@@ -268,7 +271,7 @@ impl ExprVisitor<Object> for Interpreter {
             Object::Callable(func) => {
                 let arity = func.borrow().arity();
                 if arguments.len() != arity {
-                    Err(RuntimeError::Other(
+                    Err(RuntimeError::argument_error(
                         expr.paren.line(),
                         format!(
                             "Expected {} arguments but got {}.",
@@ -282,7 +285,7 @@ impl ExprVisitor<Object> for Interpreter {
             }
             Object::Class(class) => {
                 if arguments.len() != class.arity() {
-                    Err(RuntimeError::Other(
+                    Err(RuntimeError::argument_error(
                         expr.paren.line(),
                         format!(
                             "Expected {} arguments but got {}.",
@@ -294,7 +297,7 @@ impl ExprVisitor<Object> for Interpreter {
                     class.call(self, arguments)
                 }
             }
-            _ => Err(RuntimeError::TypeError(
+            _ => Err(RuntimeError::type_error(
                 expr.paren.line(),
                 "Can only call functions and classes.".to_string(),
             )),
@@ -310,7 +313,7 @@ impl ExprVisitor<Object> for Interpreter {
         if let Object::ClassInstance(instance) = object {
             instance.get(expr.name.clone())
         } else {
-            Err(RuntimeError::TypeError(
+            Err(RuntimeError::type_error(
                 expr.name.line(),
                 "Only instances have properties.".to_string(),
             ))
@@ -328,7 +331,7 @@ impl ExprVisitor<Object> for Interpreter {
             instance.set(expr.name.clone(), value.clone());
             Ok(value)
         } else {
-            Err(RuntimeError::TypeError(
+            Err(RuntimeError::type_error(
                 expr.name.line(),
                 "Only instances have fields.".to_string(),
             ))
@@ -349,7 +352,7 @@ impl StmtVisitor<()> for Interpreter {
     fn visit_print_stmt(&mut self, stmt: &mut Expr) -> Result<(), RuntimeError> {
         let value = stmt.accept(self)?;
         writeln!(self.output.borrow_mut(), "{}", value)
-            .map_err(|e| RuntimeError::Other(0, format!("Print failed: {}", e)))?;
+            .map_err(|e| RuntimeError::other(0, format!("Print failed: {}", e)))?;
         self.output.borrow_mut().flush().ok();
         Ok(())
     }

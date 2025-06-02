@@ -61,7 +61,7 @@ impl Environment {
                 e.insert(value);
                 Ok(())
             }
-            std::collections::hash_map::Entry::Occupied(_) => Err(RuntimeError::Other(
+            std::collections::hash_map::Entry::Occupied(_) => Err(RuntimeError::other(
                 0,
                 format!("name \"{}\" already defined", name.clone()),
             )),
@@ -91,7 +91,7 @@ impl Environment {
             Some(val) => Ok(val.clone()),
             None => match &self.enclosing {
                 Some(parent) => parent.borrow().get(name),
-                None => Err(RuntimeError::UndefinedVariable(
+                None => Err(RuntimeError::undefined_variable(
                     name.line(),
                     format!("undefined variable '{}'", name.lexeme()),
                 )),
@@ -101,7 +101,7 @@ impl Environment {
     pub fn get_at(&self, distance: &usize, name: String) -> Result<Object, RuntimeError> {
         if *distance == 0 {
             match self.values.get(&name) {
-                None => Err(RuntimeError::UndefinedVariable(
+                None => Err(RuntimeError::undefined_variable(
                     0,
                     format!(
                         "Variable 1 \"{}\" cannot be resolved at the specified location",
@@ -113,7 +113,7 @@ impl Environment {
         } else {
             match self.ancestors(distance) {
                 Some(env) => match env.borrow().values.get(&name) {
-                    None => Err(RuntimeError::UndefinedVariable(
+                    None => Err(RuntimeError::undefined_variable(
                         0,
                         format!(
                             "Variable 2 \"{}\" cannot be resolved at the specified location",
@@ -122,7 +122,7 @@ impl Environment {
                     )),
                     Some(obj) => Ok(obj.clone()),
                 },
-                None => Err(RuntimeError::UndefinedVariable(
+                None => Err(RuntimeError::undefined_variable(
                     0,
                     format!(
                         "Variable 3 \"{}\" cannot be resolved at the specified location",
@@ -141,7 +141,7 @@ impl Environment {
     ) -> Result<Object, RuntimeError> {
         if *distance == 0 {
             if !self.values.contains_key(name.lexeme()) {
-                return Err(RuntimeError::UndefinedVariable(
+                return Err(RuntimeError::undefined_variable(
                     name.line(),
                     format!("Undefined variable '{}'", name.lexeme()),
                 ));
@@ -157,7 +157,7 @@ impl Environment {
                     .insert(name.lexeme().to_owned(), value)
                 {
                     Some(old_value) => Ok(old_value),
-                    None => Err(RuntimeError::UndefinedVariable(
+                    None => Err(RuntimeError::undefined_variable(
                         name.line(),
                         format!(
                             "Variable \"{}\" cannot be resolved at the specified location",
@@ -165,7 +165,7 @@ impl Environment {
                         ),
                     )),
                 },
-                None => Err(RuntimeError::UndefinedVariable(
+                None => Err(RuntimeError::undefined_variable(
                     name.line(),
                     format!(
                         "Variable \"{}\" cannot be resolved at the specified location",
@@ -213,7 +213,7 @@ impl Environment {
         } else if let Some(ref parent) = self.enclosing {
             parent.borrow_mut().assign(name, value)
         } else {
-            Err(RuntimeError::Other(
+            Err(RuntimeError::other(
                 0,
                 format!("undefined variable \"{name}\""),
             ))
