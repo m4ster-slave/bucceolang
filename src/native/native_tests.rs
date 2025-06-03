@@ -177,6 +177,11 @@ mod test {
     #[test]
     fn test_network_functions() {
         let source = r#"
+            print String.contains(Network.http_get("https://httpbin.org/get"), "url");
+            print String.contains(Network.http_post("https://httpbin.org/post", "foo=bar"), "foo");
+            print Network.download_file("https://httpbin.org/robots.txt", "/tmp/test_download.txt");
+            print IO.exists("/tmp/test_download.txt");
+            print Network.ping("8.8.8.8");
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -206,7 +211,13 @@ mod test {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        assert_eq!(result, "");
+        let mut lines = result.lines();
+        assert_eq!(lines.next().unwrap().trim(), "true"); // http_get contains url
+        assert_eq!(lines.next().unwrap().trim(), "true"); // http_post contains foo
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // download_file returns Nil
+        assert_eq!(lines.next().unwrap().trim(), "true"); // file exists
+        let ping_result = lines.next().unwrap().trim();
+        assert!(ping_result == "true" || ping_result == "false"); // ping may fail
     }
 
     #[test]
