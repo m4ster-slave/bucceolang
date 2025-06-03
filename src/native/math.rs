@@ -1,12 +1,13 @@
 use crate::callable::Callable;
+use crate::class::ClassObject;
 use crate::interpreter::Interpreter;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
-use crate::class::ClassObject;
-use std::collections::HashMap;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::collections::HashMap;
 use std::fmt::Display;
+use std::rc::Rc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct AbsFn;
@@ -52,12 +53,20 @@ pub struct MinFn;
 pub struct MaxFn;
 #[derive(Debug, Clone)]
 pub struct ClampFn;
+#[derive(Debug, Clone)]
+pub struct RandomFn;
 
 impl Callable for AbsFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("AbsFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for AbsFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -66,10 +75,30 @@ impl Display for AbsFn {
 }
 
 impl Callable for SqrtFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
-        unimplemented!("SqrtFn native logic not implemented yet")
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.sqrt()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for SqrtFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -78,10 +107,16 @@ impl Display for SqrtFn {
 }
 
 impl Callable for PowFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("PowFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 2 }
+    fn arity(&self) -> usize {
+        2
+    }
 }
 impl Display for PowFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -90,10 +125,16 @@ impl Display for PowFn {
 }
 
 impl Callable for ExpFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("ExpFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for ExpFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -102,10 +143,16 @@ impl Display for ExpFn {
 }
 
 impl Callable for LogFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("LogFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 2 }
+    fn arity(&self) -> usize {
+        2
+    }
 }
 impl Display for LogFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -114,10 +161,16 @@ impl Display for LogFn {
 }
 
 impl Callable for Log10Fn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("Log10Fn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for Log10Fn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -126,10 +179,31 @@ impl Display for Log10Fn {
 }
 
 impl Callable for SinFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
-        unimplemented!("SinFn native logic not implemented yet")
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+
+        if let Object::Number(num) = arg {
+            // sin is rad
+            Ok(Object::Number(num.sin()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for SinFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -138,10 +212,16 @@ impl Display for SinFn {
 }
 
 impl Callable for CosFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("CosFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for CosFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -150,10 +230,16 @@ impl Display for CosFn {
 }
 
 impl Callable for TanFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("TanFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for TanFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -162,10 +248,16 @@ impl Display for TanFn {
 }
 
 impl Callable for AsinFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("AsinFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for AsinFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -174,10 +266,16 @@ impl Display for AsinFn {
 }
 
 impl Callable for AcosFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("AcosFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for AcosFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -186,10 +284,16 @@ impl Display for AcosFn {
 }
 
 impl Callable for AtanFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("AtanFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for AtanFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -198,10 +302,16 @@ impl Display for AtanFn {
 }
 
 impl Callable for Atan2Fn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("Atan2Fn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 2 }
+    fn arity(&self) -> usize {
+        2
+    }
 }
 impl Display for Atan2Fn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -210,10 +320,16 @@ impl Display for Atan2Fn {
 }
 
 impl Callable for FloorFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("FloorFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for FloorFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -222,10 +338,16 @@ impl Display for FloorFn {
 }
 
 impl Callable for CeilFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("CeilFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for CeilFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -234,10 +356,16 @@ impl Display for CeilFn {
 }
 
 impl Callable for RoundFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("RoundFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for RoundFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -246,10 +374,16 @@ impl Display for RoundFn {
 }
 
 impl Callable for TruncFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("TruncFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for TruncFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -258,10 +392,16 @@ impl Display for TruncFn {
 }
 
 impl Callable for DegreesFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("DegreesFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for DegreesFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -270,10 +410,16 @@ impl Display for DegreesFn {
 }
 
 impl Callable for RadiansFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("RadiansFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for RadiansFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -282,10 +428,16 @@ impl Display for RadiansFn {
 }
 
 impl Callable for MinFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("MinFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for MinFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -294,10 +446,16 @@ impl Display for MinFn {
 }
 
 impl Callable for MaxFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("MaxFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 1 }
+    fn arity(&self) -> usize {
+        1
+    }
 }
 impl Display for MaxFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -306,10 +464,16 @@ impl Display for MaxFn {
 }
 
 impl Callable for ClampFn {
-    fn call(&self, _interpreter: &mut Interpreter, _arguments: Vec<Object>) -> Result<Object, RuntimeError> {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         unimplemented!("ClampFn native logic not implemented yet")
     }
-    fn arity(&self) -> usize { 3 }
+    fn arity(&self) -> usize {
+        3
+    }
 }
 impl Display for ClampFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -317,31 +481,160 @@ impl Display for ClampFn {
     }
 }
 
+impl Callable for RandomFn {
+    fn call(
+        &self,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let range_obj = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+
+        if let Object::Number(max) = range_obj {
+            if *max <= 0.0 {
+                return Err(RuntimeError::other(0, "range must be positive".to_string()));
+            }
+            let rand_value = Self::lcg_next();
+            let result = (rand_value as f64 % max).floor();
+            Ok(Object::Number(result))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
+    }
+    fn arity(&self) -> usize {
+        1
+    }
+}
+impl Display for RandomFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn random>")
+    }
+}
+thread_local! {
+    static RNG_STATE: RefCell<u64> = RefCell::new(seed_from_time());
+}
+
+fn seed_from_time() -> u64 {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    (nanos & 0x7fffffff) as u64
+}
+impl RandomFn {
+    fn lcg_next() -> u64 {
+        RNG_STATE.with(|state| {
+            let mut s = state.borrow_mut();
+            // constants for LCG: same as glibc
+            *s = s.wrapping_mul(1103515245).wrapping_add(12345) & 0x7fffffff;
+            *s
+        })
+    }
+}
+
 pub fn create_class() -> ClassObject {
     let methods = HashMap::new();
     let mut static_methods = HashMap::new();
-    static_methods.insert("abs".to_string(), Rc::new(RefCell::new(Box::new(AbsFn) as Box<dyn Callable>)));
-    static_methods.insert("sqrt".to_string(), Rc::new(RefCell::new(Box::new(SqrtFn) as Box<dyn Callable>)));
-    static_methods.insert("pow".to_string(), Rc::new(RefCell::new(Box::new(PowFn) as Box<dyn Callable>)));
-    static_methods.insert("exp".to_string(), Rc::new(RefCell::new(Box::new(ExpFn) as Box<dyn Callable>)));
-    static_methods.insert("log".to_string(), Rc::new(RefCell::new(Box::new(LogFn) as Box<dyn Callable>)));
-    static_methods.insert("log10".to_string(), Rc::new(RefCell::new(Box::new(Log10Fn) as Box<dyn Callable>)));
-    static_methods.insert("sin".to_string(), Rc::new(RefCell::new(Box::new(SinFn) as Box<dyn Callable>)));
-    static_methods.insert("cos".to_string(), Rc::new(RefCell::new(Box::new(CosFn) as Box<dyn Callable>)));
-    static_methods.insert("tan".to_string(), Rc::new(RefCell::new(Box::new(TanFn) as Box<dyn Callable>)));
-    static_methods.insert("asin".to_string(), Rc::new(RefCell::new(Box::new(AsinFn) as Box<dyn Callable>)));
-    static_methods.insert("acos".to_string(), Rc::new(RefCell::new(Box::new(AcosFn) as Box<dyn Callable>)));
-    static_methods.insert("atan".to_string(), Rc::new(RefCell::new(Box::new(AtanFn) as Box<dyn Callable>)));
-    static_methods.insert("atan2".to_string(), Rc::new(RefCell::new(Box::new(Atan2Fn) as Box<dyn Callable>)));
-    static_methods.insert("floor".to_string(), Rc::new(RefCell::new(Box::new(FloorFn) as Box<dyn Callable>)));
-    static_methods.insert("ceil".to_string(), Rc::new(RefCell::new(Box::new(CeilFn) as Box<dyn Callable>)));
-    static_methods.insert("round".to_string(), Rc::new(RefCell::new(Box::new(RoundFn) as Box<dyn Callable>)));
-    static_methods.insert("trunc".to_string(), Rc::new(RefCell::new(Box::new(TruncFn) as Box<dyn Callable>)));
-    static_methods.insert("degrees".to_string(), Rc::new(RefCell::new(Box::new(DegreesFn) as Box<dyn Callable>)));
-    static_methods.insert("radians".to_string(), Rc::new(RefCell::new(Box::new(RadiansFn) as Box<dyn Callable>)));
-    static_methods.insert("min".to_string(), Rc::new(RefCell::new(Box::new(MinFn) as Box<dyn Callable>)));
-    static_methods.insert("max".to_string(), Rc::new(RefCell::new(Box::new(MaxFn) as Box<dyn Callable>)));
-    static_methods.insert("clamp".to_string(), Rc::new(RefCell::new(Box::new(ClampFn) as Box<dyn Callable>)));
+    static_methods.insert(
+        "abs".to_string(),
+        Rc::new(RefCell::new(Box::new(AbsFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "sqrt".to_string(),
+        Rc::new(RefCell::new(Box::new(SqrtFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "pow".to_string(),
+        Rc::new(RefCell::new(Box::new(PowFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "exp".to_string(),
+        Rc::new(RefCell::new(Box::new(ExpFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "log".to_string(),
+        Rc::new(RefCell::new(Box::new(LogFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "log10".to_string(),
+        Rc::new(RefCell::new(Box::new(Log10Fn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "sin".to_string(),
+        Rc::new(RefCell::new(Box::new(SinFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "cos".to_string(),
+        Rc::new(RefCell::new(Box::new(CosFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "tan".to_string(),
+        Rc::new(RefCell::new(Box::new(TanFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "asin".to_string(),
+        Rc::new(RefCell::new(Box::new(AsinFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "acos".to_string(),
+        Rc::new(RefCell::new(Box::new(AcosFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "atan".to_string(),
+        Rc::new(RefCell::new(Box::new(AtanFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "atan2".to_string(),
+        Rc::new(RefCell::new(Box::new(Atan2Fn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "floor".to_string(),
+        Rc::new(RefCell::new(Box::new(FloorFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "ceil".to_string(),
+        Rc::new(RefCell::new(Box::new(CeilFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "round".to_string(),
+        Rc::new(RefCell::new(Box::new(RoundFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "trunc".to_string(),
+        Rc::new(RefCell::new(Box::new(TruncFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "degrees".to_string(),
+        Rc::new(RefCell::new(Box::new(DegreesFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "radians".to_string(),
+        Rc::new(RefCell::new(Box::new(RadiansFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "min".to_string(),
+        Rc::new(RefCell::new(Box::new(MinFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "max".to_string(),
+        Rc::new(RefCell::new(Box::new(MaxFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "clamp".to_string(),
+        Rc::new(RefCell::new(Box::new(ClampFn) as Box<dyn Callable>)),
+    );
+    static_methods.insert(
+        "random".to_string(),
+        Rc::new(RefCell::new(Box::new(RandomFn) as Box<dyn Callable>)),
+    );
+
     ClassObject {
         name: "Math".to_string(),
         superclass: None,
@@ -349,5 +642,3 @@ pub fn create_class() -> ClassObject {
         static_methods,
     }
 }
-
-

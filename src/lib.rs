@@ -5,7 +5,6 @@ mod expr_types;
 mod function;
 mod interpreter;
 mod native;
-mod native_functions;
 mod object;
 mod parser;
 mod parser_error;

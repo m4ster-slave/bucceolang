@@ -1,15 +1,15 @@
 mod io;
 mod math;
-mod string;
-mod time;
-mod system;
+mod native_tests;
 mod network;
+mod string;
+mod system;
+mod time;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::environment::Environment;
-use crate::native_functions::*;
 use crate::object::Object;
 
 pub fn add_native_functions(globals: &Rc<RefCell<Environment>>) {
@@ -36,39 +36,9 @@ pub fn add_native_functions(globals: &Rc<RefCell<Environment>>) {
         .expect("Failed to define System class");
     globals
         .borrow_mut()
-        .define("Network".to_string(), Object::Class(network::create_class()))
+        .define(
+            "Network".to_string(),
+            Object::Class(network::create_class()),
+        )
         .expect("Failed to define Network class");
-
-    globals
-        .borrow_mut()
-        .define(
-            "clock".into(),
-            Object::Callable(Rc::new(RefCell::new(Box::new(ClockFn)))),
-        )
-        .expect("Failed to define native function 'clock'");
-
-    globals
-        .borrow_mut()
-        .define(
-            "random".into(),
-            Object::Callable(Rc::new(RefCell::new(Box::new(RandomFn)))),
-        )
-        .expect("Failed to define native function 'random'");
-
-    globals
-        .borrow_mut()
-        .define(
-            "sin".into(),
-            Object::Callable(Rc::new(RefCell::new(Box::new(SinFn)))),
-        )
-        .expect("Failed to define native function 'sin'");
-
-    globals
-        .borrow_mut()
-        .define(
-            "sqrt".into(),
-            Object::Callable(Rc::new(RefCell::new(Box::new(SqrtFn)))),
-        )
-        .expect("Failed to define native function 'sqrt'");
 }
-

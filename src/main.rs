@@ -6,7 +6,6 @@ mod function;
 mod integration_tests;
 mod interpreter;
 mod native;
-mod native_functions;
 mod object;
 mod parser;
 mod parser_error;
