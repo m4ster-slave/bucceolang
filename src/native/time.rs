@@ -12,10 +12,6 @@ use std::rc::Rc;
 pub struct TimeFn;
 #[derive(Debug, Clone)]
 pub struct SleepFn;
-#[derive(Debug, Clone)]
-pub struct NowFn;
-#[derive(Debug, Clone)]
-pub struct StrftimeFn;
 
 impl Callable for TimeFn {
     fn call(
@@ -45,7 +41,29 @@ impl Callable for SleepFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("SleepFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
+        }
+        let secs = match &_arguments[0] {
+            Object::Number(n) => *n,
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "sleep(secs): argument must be a number",
+                ))
+            }
+        };
+        if secs < 0.0 {
+            return Err(RuntimeError::argument_error(
+                0,
+                "sleep(secs): argument must be non-negative",
+            ));
+        }
+        std::thread::sleep(std::time::Duration::from_secs_f64(secs));
+        Ok(Object::Nil)
     }
     fn arity(&self) -> usize {
         1
@@ -54,42 +72,6 @@ impl Callable for SleepFn {
 impl Display for SleepFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<native fn sleep>")
-    }
-}
-
-impl Callable for NowFn {
-    fn call(
-        &self,
-        _interpreter: &mut Interpreter,
-        _arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
-        unimplemented!("NowFn native logic not implemented yet")
-    }
-    fn arity(&self) -> usize {
-        0
-    }
-}
-impl Display for NowFn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<native fn now>")
-    }
-}
-
-impl Callable for StrftimeFn {
-    fn call(
-        &self,
-        _interpreter: &mut Interpreter,
-        _arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
-        unimplemented!("StrftimeFn native logic not implemented yet")
-    }
-    fn arity(&self) -> usize {
-        2
-    }
-}
-impl Display for StrftimeFn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<native fn strftime>")
     }
 }
 
@@ -108,10 +90,6 @@ pub fn create_class() -> ClassObject {
         "now".to_string(),
         Rc::new(RefCell::new(Box::new(NowFn) as Box<dyn Callable>)),
     );
-    static_methods.insert(
-        "strftime".to_string(),
-        Rc::new(RefCell::new(Box::new(StrftimeFn) as Box<dyn Callable>)),
-    );
     ClassObject {
         name: "Time".to_string(),
         superclass: None,
@@ -119,4 +97,3 @@ pub fn create_class() -> ClassObject {
         static_methods,
     }
 }
-

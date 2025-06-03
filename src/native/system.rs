@@ -25,7 +25,14 @@ impl Callable for ExitFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ExitFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let code = match &_arguments[0] {
+            Object::Number(n) => *n as i32,
+            _ => return Err(RuntimeError::argument_error(0, "exit(code): argument must be a number")),
+        };
+        std::process::exit(code);
     }
     fn arity(&self) -> usize {
         1
@@ -43,7 +50,17 @@ impl Callable for EnvFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("EnvFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let key = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "env(key): argument must be a string")),
+        };
+        match std::env::var(key) {
+            Ok(val) => Ok(Object::String(val)),
+            Err(_) => Ok(Object::Nil),
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -61,7 +78,8 @@ impl Callable for ArgsFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ArgsFn native logic not implemented yet")
+        let args: Vec<String> = std::env::args().collect();
+        Ok(Object::String(args.join(",")))
     }
     fn arity(&self) -> usize {
         0
@@ -79,7 +97,20 @@ impl Callable for ExecFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ExecFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let cmd = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "exec(cmd): argument must be a string")),
+        };
+        match std::process::Command::new("sh").arg("-c").arg(cmd).output() {
+            Ok(output) => {
+                let out = String::from_utf8_lossy(&output.stdout).to_string();
+                Ok(Object::String(out))
+            },
+            Err(e) => Err(RuntimeError::other(0, format!("Exec error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -97,7 +128,7 @@ impl Callable for PlatformFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("PlatformFn native logic not implemented yet")
+        Ok(Object::String(std::env::consts::OS.to_string()))
     }
     fn arity(&self) -> usize {
         0

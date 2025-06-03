@@ -247,6 +247,10 @@ mod test {
     #[test]
     fn test_system_functions() {
         let source = r#"
+            print System.platform();
+            print System.env("PATH") != nil;
+            print System.args() != nil;
+            print System.exec("echo hi");
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -276,12 +280,21 @@ mod test {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        assert_eq!(result, "");
+        let mut lines = result.lines();
+        let platform = lines.next().unwrap().trim();
+        assert!(platform == "linux" || platform == "windows" || platform == "macos");
+        assert_eq!(lines.next().unwrap().trim(), "true"); // env PATH exists
+        assert_eq!(lines.next().unwrap().trim(), "true"); // args returns string
+        assert_eq!(lines.next().unwrap().trim(), "hi"); // exec echo hi
     }
 
     #[test]
     fn test_time_functions() {
         let source = r#"
+            var t = Time.time();
+            print t > 0;
+            Time.sleep(0.1);
+            print "slept";
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -311,6 +324,8 @@ mod test {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        assert_eq!(result, "");
+        let mut lines = result.lines();
+        assert_eq!(lines.next().unwrap().trim(), "true"); // t > 0
+        assert_eq!(lines.next().unwrap().trim(), "slept");
     }
 }
