@@ -1,9 +1,16 @@
+#[cfg(not(target_arch = "wasm32"))]
 mod io;
+#[cfg(not(target_arch = "wasm32"))]
 mod math;
+#[cfg(not(target_arch = "wasm32"))]
 mod native_tests;
+#[cfg(not(target_arch = "wasm32"))]
 mod network;
+#[cfg(not(target_arch = "wasm32"))]
 mod string;
+#[cfg(not(target_arch = "wasm32"))]
 mod system;
+#[cfg(not(target_arch = "wasm32"))]
 mod time;
 
 use std::cell::RefCell;
@@ -12,6 +19,7 @@ use std::rc::Rc;
 use crate::environment::Environment;
 use crate::object::Object;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn add_native_functions(globals: &Rc<RefCell<Environment>>) {
     globals
         .borrow_mut()
@@ -41,4 +49,9 @@ pub fn add_native_functions(globals: &Rc<RefCell<Environment>>) {
             Object::Class(network::create_class()),
         )
         .expect("Failed to define Network class");
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn add_native_functions(_globals: &Rc<RefCell<Environment>>) {
+    // No native functions available in WASM
 }

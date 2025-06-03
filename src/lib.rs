@@ -47,7 +47,7 @@ pub fn run(source: &str) -> String {
     let output: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
     let output_for_interp = output.clone();
 
-    let mut interpreter = Interpreter::new_with_output(output_for_interp);
+    let mut interpreter = Interpreter::new_with_output_without_natives(output_for_interp);
 
     let mut resolver = Resolver::new(&mut interpreter);
     match resolver.resolve(&mut stmts) {

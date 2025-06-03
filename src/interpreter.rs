@@ -379,9 +379,10 @@ impl ExprVisitor<Object> for Interpreter {
         };
 
         match obj {
-            Object::ClassInstance(ci) => {
-                Ok(Object::Callable(Rc::new(RefCell::new(Box::new(method.bind(ci)?) as Box<dyn Callable>))))
-            }
+            Object::ClassInstance(ci) => Ok(Object::Callable(Rc::new(RefCell::new(Box::new(
+                method.bind(ci)?,
+            )
+                as Box<dyn Callable>)))),
             _ => Err(RuntimeError::undefined_variable(
                 expr.keyword.line(),
                 "'this' is not a class instance",
@@ -462,7 +463,9 @@ impl StmtVisitor<()> for Interpreter {
         let function = Function::new(stmt.clone(), self.environment.clone(), false);
         self.environment.borrow_mut().define(
             stmt.name.lexeme().to_string(),
-            Object::Callable(Rc::new(RefCell::new(Box::new(function) as Box<dyn Callable>))),
+            Object::Callable(Rc::new(RefCell::new(
+                Box::new(function) as Box<dyn Callable>
+            ))),
         )?;
         Ok(())
     }
@@ -542,7 +545,12 @@ impl StmtVisitor<()> for Interpreter {
                     is_initializer: false,
                 };
                 let full_name = format!("{}.{}", stmt.name.lexeme(), method.name.lexeme());
-                env.define(full_name, Object::Callable(Rc::new(RefCell::new(Box::new(function) as Box<dyn Callable>))))?;
+                env.define(
+                    full_name,
+                    Object::Callable(Rc::new(RefCell::new(
+                        Box::new(function) as Box<dyn Callable>
+                    ))),
+                )?;
             }
         }
 
@@ -582,6 +590,18 @@ impl Interpreter {
     pub fn new_with_output(output: Rc<RefCell<dyn Write>>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
         native::add_native_functions(&globals);
+
+        Interpreter {
+            environment: globals.to_owned(),
+            globals,
+            locals: HashMap::new(),
+            output,
+        }
+    }
+
+    /// Creates a new interpreter with the given output destination.
+    pub fn new_with_output_without_natives(output: Rc<RefCell<dyn Write>>) -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
 
         Interpreter {
             environment: globals.to_owned(),
