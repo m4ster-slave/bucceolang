@@ -1,9 +1,9 @@
-pub mod io;
-pub mod math;
-pub mod network;
-pub mod string;
-pub mod system;
-pub mod time;
+mod io;
+mod math;
+mod string;
+mod time;
+mod system;
+mod network;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -17,6 +17,27 @@ pub fn add_native_functions(globals: &Rc<RefCell<Environment>>) {
         .borrow_mut()
         .define("IO".to_string(), Object::Class(io::create_class()))
         .expect("Failed to define IO class");
+
+    globals
+        .borrow_mut()
+        .define("Math".to_string(), Object::Class(math::create_class()))
+        .expect("Failed to define Math class");
+    globals
+        .borrow_mut()
+        .define("String".to_string(), Object::Class(string::create_class()))
+        .expect("Failed to define String class");
+    globals
+        .borrow_mut()
+        .define("Time".to_string(), Object::Class(time::create_class()))
+        .expect("Failed to define Time class");
+    globals
+        .borrow_mut()
+        .define("System".to_string(), Object::Class(system::create_class()))
+        .expect("Failed to define System class");
+    globals
+        .borrow_mut()
+        .define("Network".to_string(), Object::Class(network::create_class()))
+        .expect("Failed to define Network class");
 
     globals
         .borrow_mut()
