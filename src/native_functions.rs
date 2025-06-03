@@ -5,8 +5,6 @@ use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use std::cell::RefCell;
-use std::io;
-use std::io::prelude::*;
 
 /// Returns the current time in seconds since the Unix epoch as a floating point number.
 ///
@@ -41,44 +39,6 @@ impl Callable for ClockFn {
 impl Display for ClockFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<native fn clock>")
-    }
-}
-
-/// Reads a single line from standard input and returns it as a string (with whitespace trimmed).
-///
-/// # Usage
-/// ```lox
-/// var input = read(); // Waits for user input, then assigns the trimmed string to `input`
-/// ```
-///
-/// # Returns
-/// - `String`: The line read from stdin, trimmed of whitespace.
-#[derive(Clone, Debug)]
-pub struct ReadFn;
-impl Callable for ReadFn {
-    fn call(
-        &self,
-        _interpreter: &mut Interpreter,
-        _arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
-        let mut s = String::new();
-        match io::stdin().lock().read_line(&mut s) {
-            Ok(_) => Ok(Object::String(s.trim().into())),
-            Err(e) => Err(RuntimeError::other(
-                0,
-                format!("error when reading from stdin: {e}"),
-            )),
-        }
-    }
-
-    fn arity(&self) -> usize {
-        0
-    }
-}
-
-impl Display for ReadFn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<native fn read>")
     }
 }
 

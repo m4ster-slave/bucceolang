@@ -1,15 +1,14 @@
 use crate::callable::Callable;
 use crate::class::ClassObject;
 use crate::environment::Environment;
-use crate::expr_types::*;
 use crate::function::Function;
-use crate::native_functions::*;
 use crate::object::Object;
 use crate::runtime_error::RuntimeError;
 use crate::stmt_types::StmtVisitor;
 use crate::stmt_types::*;
 use crate::token::TokenType;
 use crate::Token;
+use crate::{expr_types::*, native};
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -311,7 +310,7 @@ impl ExprVisitor<Object> for Interpreter {
             Object::Class(class) => {
                 // Try to find static method
                 if let Some(method) = class.find_static_method(expr.name.lexeme()) {
-                    Ok(Object::Callable(Rc::new(RefCell::new(method))))
+                    Ok(Object::Callable(method))
                 } else {
                     Err(RuntimeError::undefined_variable(
                         expr.name.line(),
@@ -381,7 +380,7 @@ impl ExprVisitor<Object> for Interpreter {
 
         match obj {
             Object::ClassInstance(ci) => {
-                Ok(Object::Callable(Rc::new(RefCell::new(method.bind(ci)?))))
+                Ok(Object::Callable(Rc::new(RefCell::new(Box::new(method.bind(ci)?) as Box<dyn Callable>))))
             }
             _ => Err(RuntimeError::undefined_variable(
                 expr.keyword.line(),
@@ -463,7 +462,7 @@ impl StmtVisitor<()> for Interpreter {
         let function = Function::new(stmt.clone(), self.environment.clone(), false);
         self.environment.borrow_mut().define(
             stmt.name.lexeme().to_string(),
-            Object::Callable(Rc::new(RefCell::new(function))),
+            Object::Callable(Rc::new(RefCell::new(Box::new(function) as Box<dyn Callable>))),
         )?;
         Ok(())
     }
@@ -543,7 +542,7 @@ impl StmtVisitor<()> for Interpreter {
                     is_initializer: false,
                 };
                 let full_name = format!("{}.{}", stmt.name.lexeme(), method.name.lexeme());
-                env.define(full_name, Object::Callable(Rc::new(RefCell::new(function))))?;
+                env.define(full_name, Object::Callable(Rc::new(RefCell::new(Box::new(function) as Box<dyn Callable>))))?;
             }
         }
 
@@ -582,43 +581,7 @@ impl Interpreter {
     /// Creates a new interpreter with the given output destination.
     pub fn new_with_output(output: Rc<RefCell<dyn Write>>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
-
-        globals
-            .borrow_mut()
-            .define(
-                "clock".into(),
-                Object::Callable(Rc::new(RefCell::new(ClockFn))),
-            )
-            .expect("Failed to define native function 'clock'");
-
-        globals
-            .borrow_mut()
-            .define(
-                "read".into(),
-                Object::Callable(Rc::new(RefCell::new(ReadFn))),
-            )
-            .expect("Failed to define native function 'read'");
-
-        globals
-            .borrow_mut()
-            .define(
-                "random".into(),
-                Object::Callable(Rc::new(RefCell::new(RandomFn))),
-            )
-            .expect("Failed to define native function 'random'");
-
-        globals
-            .borrow_mut()
-            .define("sin".into(), Object::Callable(Rc::new(RefCell::new(SinFn))))
-            .expect("Failed to define native function 'sin'");
-
-        globals
-            .borrow_mut()
-            .define(
-                "sqrt".into(),
-                Object::Callable(Rc::new(RefCell::new(SqrtFn))),
-            )
-            .expect("Failed to define native function 'sqrt'");
+        native::add_native_functions(&globals);
 
         Interpreter {
             environment: globals.to_owned(),

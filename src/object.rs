@@ -20,7 +20,7 @@ pub enum Object {
     /// Represents a text string.
     String(String),
     /// Closure or function
-    Callable(Rc<RefCell<dyn Callable>>), // changed: use trait object
+    Callable(Rc<RefCell<Box<dyn Callable>>>), // changed: use trait object
     Class(ClassObject),
     ClassInstance(ClassInstance),
 }
@@ -33,7 +33,7 @@ impl std::fmt::Debug for Object {
             Object::Number(n) => write!(f, "Number({})", n),
             Object::String(s) => write!(f, "String({:?})", s),
             Object::Callable(_) => write!(f, "Callable(<dyn Callable>)"),
-            Object::Class(class) => write!(f, "Class({:?})", class),
+            Object::Class(class) => write!(f, "Class({})", class.name),
             Object::ClassInstance(instance) => write!(f, "ClassInstance({:?})", instance),
         }
     }

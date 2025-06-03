@@ -10,13 +10,24 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ClassObject {
     pub name: String,
     pub superclass: Option<Box<Object>>,
     pub methods: HashMap<String, Function>,
     #[allow(dead_code)]
-    pub static_methods: HashMap<String, Function>,
+    pub static_methods: HashMap<String, Rc<RefCell<Box<dyn Callable>>>>,
+}
+
+impl std::fmt::Debug for ClassObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ClassObject")
+            .field("name", &self.name)
+            .field("superclass", &self.superclass)
+            .field("methods", &self.methods)
+            .field("static_methods", &"<dyn Callable map>")
+            .finish()
+    }
 }
 
 impl ClassObject {
@@ -28,10 +39,10 @@ impl ClassObject {
         // Split methods into instance methods and static methods
         let mut instance_methods = HashMap::new();
         let mut static_methods = HashMap::new();
-        
+
         for (name, method) in methods {
             if method.declaration.is_static {
-                static_methods.insert(name, method);
+                static_methods.insert(name, Rc::new(RefCell::new(Box::new(method) as Box<dyn Callable>)));
             } else {
                 instance_methods.insert(name, method);
             }
@@ -61,7 +72,7 @@ impl ClassObject {
     }
 
     #[allow(dead_code)]
-    pub fn find_static_method(&self, name: &str) -> Option<Function> {
+    pub fn find_static_method(&self, name: &str) -> Option<Rc<RefCell<Box<dyn Callable>>>> {
         if let Some(method) = self.static_methods.get(name) {
             return Some(method.clone());
         }
@@ -126,7 +137,7 @@ impl ClassInstance {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
                 Some(method) => match method.clone().bind(self.clone()) {
-                    Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(bound_method)))),
+                    Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(Box::new(bound_method) as Box<dyn Callable>)))),
                     Err(e) => Err(e),
                 },
                 None => Err(RuntimeError::undefined_variable(
