@@ -212,6 +212,19 @@ mod test {
     #[test]
     fn test_string_functions() {
         let source = r#"
+            print String.len("hello");
+            print String.split("a,b,c", ",");
+            print String.join("-", "a,b,c");
+            print String.replace("hello world", "world", "rust");
+            print String.lower("HeLLo");
+            print String.upper("HeLLo");
+            print String.strip("  hi  ");
+            print String.startswith("foobar", "foo");
+            print String.endswith("foobar", "bar");
+            print String.find("hello world", "world");
+            print String.find("hello world", "rust");
+            print String.contains("hello world", "world");
+            print String.contains("hello world", "rust");
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -241,7 +254,20 @@ mod test {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        assert_eq!(result, "");
+        let mut lines = result.lines();
+        assert_eq!(lines.next().unwrap().trim(), "5"); // len
+        assert_eq!(lines.next().unwrap().trim(), "a,b,c"); // split
+        assert_eq!(lines.next().unwrap().trim(), "a-b-c"); // join
+        assert_eq!(lines.next().unwrap().trim(), "hello rust"); // replace
+        assert_eq!(lines.next().unwrap().trim(), "hello"); // lower
+        assert_eq!(lines.next().unwrap().trim(), "HELLO"); // upper
+        assert_eq!(lines.next().unwrap().trim(), "hi"); // strip
+        assert_eq!(lines.next().unwrap().trim(), "true"); // startswith
+        assert_eq!(lines.next().unwrap().trim(), "true"); // endswith
+        assert_eq!(lines.next().unwrap().trim(), "6"); // find
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // find not found
+        assert_eq!(lines.next().unwrap().trim(), "true"); // contains
+        assert_eq!(lines.next().unwrap().trim(), "false"); // contains not found
     }
 
     #[test]

@@ -37,7 +37,14 @@ impl Callable for LenFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("LenFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "len(s): argument must be a string")),
+        };
+        Ok(Object::Number(s.chars().count() as f64))
     }
     fn arity(&self) -> usize {
         1
@@ -55,7 +62,18 @@ impl Callable for SplitFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("SplitFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "split(s, sep): first argument must be a string")),
+        };
+        let sep = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "split(s, sep): second argument must be a string")),
+        };
+        Ok(Object::String(s.split(sep).collect::<Vec<_>>().join(",")))
     }
     fn arity(&self) -> usize {
         2
@@ -73,7 +91,19 @@ impl Callable for JoinFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("JoinFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let sep = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "join(sep, items): first argument must be a string")),
+        };
+        let items = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "join(sep, items): second argument must be a comma-separated string")),
+        };
+        let joined = items.split(',').collect::<Vec<_>>().join(sep);
+        Ok(Object::String(joined))
     }
     fn arity(&self) -> usize {
         2
@@ -91,7 +121,22 @@ impl Callable for ReplaceFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ReplaceFn native logic not implemented yet")
+        if _arguments.len() != 3 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 3 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "replace(s, from, to): first argument must be a string")),
+        };
+        let from = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "replace(s, from, to): second argument must be a string")),
+        };
+        let to = match &_arguments[2] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "replace(s, from, to): third argument must be a string")),
+        };
+        Ok(Object::String(s.replace(from, to)))
     }
     fn arity(&self) -> usize {
         3
@@ -109,7 +154,14 @@ impl Callable for LowerFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("LowerFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "lower(s): argument must be a string")),
+        };
+        Ok(Object::String(s.to_lowercase()))
     }
     fn arity(&self) -> usize {
         1
@@ -127,7 +179,14 @@ impl Callable for UpperFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("UpperFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "upper(s): argument must be a string")),
+        };
+        Ok(Object::String(s.to_uppercase()))
     }
     fn arity(&self) -> usize {
         1
@@ -145,7 +204,14 @@ impl Callable for StripFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("StripFn native logic not implemented yet")
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "strip(s): argument must be a string")),
+        };
+        Ok(Object::String(s.trim().to_string()))
     }
     fn arity(&self) -> usize {
         1
@@ -163,7 +229,18 @@ impl Callable for StartsWithFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("StartsWithFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "startswith(s, prefix): first argument must be a string")),
+        };
+        let prefix = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "startswith(s, prefix): second argument must be a string")),
+        };
+        Ok(Object::Boolean(s.starts_with(prefix)))
     }
     fn arity(&self) -> usize {
         2
@@ -181,7 +258,18 @@ impl Callable for EndsWithFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("EndsWithFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "endswith(s, suffix): first argument must be a string")),
+        };
+        let suffix = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "endswith(s, suffix): second argument must be a string")),
+        };
+        Ok(Object::Boolean(s.ends_with(suffix)))
     }
     fn arity(&self) -> usize {
         2
@@ -199,7 +287,21 @@ impl Callable for FindFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("FindFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "find(s, sub): first argument must be a string")),
+        };
+        let sub = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "find(s, sub): second argument must be a string")),
+        };
+        match s.find(sub) {
+            Some(idx) => Ok(Object::Number(idx as f64)),
+            None => Ok(Object::Nil),
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -217,7 +319,18 @@ impl Callable for ContainsFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ContainsFn native logic not implemented yet")
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let s = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "contains(s, sub): first argument must be a string")),
+        };
+        let sub = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "contains(s, sub): second argument must be a string")),
+        };
+        Ok(Object::Boolean(s.contains(sub)))
     }
     fn arity(&self) -> usize {
         2
