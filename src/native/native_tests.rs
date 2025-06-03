@@ -175,6 +175,7 @@ mod test {
     }
 
     #[test]
+    #[ignore] // keeping this for now because this test is really flaky
     fn test_network_functions() {
         let source = r#"
             print String.contains(Network.http_get("https://httpbin.org/get"), "url");
