@@ -1,0 +1,14 @@
+class Doughnut {
+  fn cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonKreme < Doughnut {
+  fn cook() {
+    super.cook();
+    print "I LOVE BOSTON";
+  }
+}
+
+BostonKreme().cook();
