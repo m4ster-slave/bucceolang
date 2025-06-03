@@ -10,6 +10,20 @@ mod test {
     #[test]
     fn test_io_functions() {
         let source = r#"
+            var fname = "test_io_file.txt";
+            var dname = "test_io_dir";
+            print IO.write_file(fname, "abc");
+            print IO.read_file(fname);
+            print IO.append_file(fname, "def");
+            print IO.read_file(fname);
+            print IO.exists(fname);
+            print IO.is_file(fname);
+            print IO.is_dir(fname);
+            print IO.mkdir(dname);
+            print IO.is_dir(dname);
+            print IO.list_dir(".");
+            print IO.remove_file(fname);
+            print IO.exists(fname);
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
@@ -39,7 +53,20 @@ mod test {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        assert_eq!(result, "");
+        let mut lines = result.lines();
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // write_file returns Nil
+        assert_eq!(lines.next().unwrap().trim(), "abc"); // read_file
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // append_file returns Nil
+        assert_eq!(lines.next().unwrap().trim(), "abcdef"); // read_file after append
+        assert_eq!(lines.next().unwrap().trim(), "true"); // exists
+        assert_eq!(lines.next().unwrap().trim(), "true"); // is_file
+        assert_eq!(lines.next().unwrap().trim(), "false"); // is_dir
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // mkdir returns Nil
+        assert_eq!(lines.next().unwrap().trim(), "true"); // is_dir for created dir
+        let dir_listing = lines.next().unwrap().trim(); // list_dir
+        assert!(dir_listing.contains("test_io_file.txt") || dir_listing.contains("test_io_dir"));
+        assert_eq!(lines.next().unwrap().trim(), "Nil"); // remove_file returns Nil
+        assert_eq!(lines.next().unwrap().trim(), "false"); // exists after remove
     }
 
     #[test]

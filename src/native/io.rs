@@ -35,7 +35,18 @@ impl Callable for ReadFileFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ReadFileFn native logic not implemented yet")
+        use std::fs;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "read_file(path): path must be a string")),
+        };
+        match fs::read_to_string(path) {
+            Ok(contents) => Ok(Object::String(contents)),
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -53,7 +64,22 @@ impl Callable for WriteFileFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("WriteFileFn native logic not implemented yet")
+        use std::fs;
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "write_file(path, contents): path must be a string")),
+        };
+        let contents = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "write_file(path, contents): contents must be a string")),
+        };
+        match fs::write(path, contents) {
+            Ok(_) => Ok(Object::Nil),
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -71,7 +97,26 @@ impl Callable for AppendFileFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("AppendFileFn native logic not implemented yet")
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        if _arguments.len() != 2 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "append_file(path, contents): path must be a string")),
+        };
+        let contents = match &_arguments[1] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "append_file(path, contents): contents must be a string")),
+        };
+        match OpenOptions::new().append(true).create(true).open(path) {
+            Ok(mut file) => match file.write_all(contents.as_bytes()) {
+                Ok(_) => Ok(Object::Nil),
+                Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+            },
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -89,7 +134,15 @@ impl Callable for ExistsFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ExistsFn native logic not implemented yet")
+        use std::path::Path;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "exists(path): path must be a string")),
+        };
+        Ok(Object::Boolean(Path::new(path).exists()))
     }
     fn arity(&self) -> usize {
         1
@@ -107,7 +160,15 @@ impl Callable for IsFileFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("IsFileFn native logic not implemented yet")
+        use std::path::Path;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "is_file(path): path must be a string")),
+        };
+        Ok(Object::Boolean(Path::new(path).is_file()))
     }
     fn arity(&self) -> usize {
         1
@@ -125,7 +186,15 @@ impl Callable for IsDirFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("IsDirFn native logic not implemented yet")
+        use std::path::Path;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "is_dir(path): path must be a string")),
+        };
+        Ok(Object::Boolean(Path::new(path).is_dir()))
     }
     fn arity(&self) -> usize {
         1
@@ -143,7 +212,31 @@ impl Callable for ListDirFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ListDirFn native logic not implemented yet")
+        use std::fs;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "list_dir(path): path must be a string")),
+        };
+        match fs::read_dir(path) {
+            Ok(entries) => {
+                let mut names = Vec::new();
+                for entry in entries {
+                    match entry {
+                        Ok(e) => {
+                            if let Some(name) = e.file_name().to_str() {
+                                names.push(name.to_string());
+                            }
+                        }
+                        Err(_) => {}
+                    }
+                }
+                Ok(Object::String(names.join(",")))
+            }
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -161,7 +254,18 @@ impl Callable for RemoveFileFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("RemoveFileFn native logic not implemented yet")
+        use std::fs;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "remove_file(path): path must be a string")),
+        };
+        match fs::remove_file(path) {
+            Ok(_) => Ok(Object::Nil),
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -179,7 +283,18 @@ impl Callable for MkdirFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("MkdirFn native logic not implemented yet")
+        use std::fs;
+        if _arguments.len() != 1 {
+            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+        }
+        let path = match &_arguments[0] {
+            Object::String(s) => s,
+            _ => return Err(RuntimeError::argument_error(0, "mkdir(path): path must be a string")),
+        };
+        match fs::create_dir_all(path) {
+            Ok(_) => Ok(Object::Nil),
+            Err(e) => Err(RuntimeError::other(0, format!("IO error: {e}"))),
+        }
     }
     fn arity(&self) -> usize {
         1
