@@ -419,11 +419,200 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Returns: nil
   - Example: `print "Hello, world!";`
 
-- *read*
+- *input*
   - Purpose: Read a line of text from standard input
-  - Arguments: None
+  - Arguments: Prompt as a String
   - Returns: String (the input line with whitespace trimmed)
-  - Example: `var name = read();`
+  - Example: `var name = input("Input: ");`
+
+=== Math Functions
+- *abs*
+  - Purpose: Calculate the absolute value of a number.
+  - Arguments: One number.
+  - Returns: Number (absolute value).
+  - Example: `print Math.abs(-5);`
+
+- *sqrt*
+  - Purpose: Calculate the square root of a number.
+  - Arguments: One non-negative number.
+  - Returns: Number (square root).
+  - Example: `print Math.sqrt(16);`
+
+- *pow*
+  - Purpose: Raise a number to a power.
+  - Arguments: Two numbers (base, exponent).
+  - Returns: Number (result).
+  - Example: `print Math.pow(2, 3);`
+
+- *sin*
+  - Purpose: Calculate the sine of a number (in radians).
+  - Arguments: One number.
+  - Returns: Number (sine value).
+  - Example: `print Math.sin(3.14159);`
+
+- *cos*
+  - Purpose: Calculate the cosine of a number (in radians).
+  - Arguments: One number.
+  - Returns: Number (cosine value).
+  - Example: `print Math.cos(3.14159);`
+
+- *tan*
+  - Purpose: Calculate the tangent of a number (in radians).
+  - Arguments: One number.
+  - Returns: Number (tangent value).
+  - Example: `print Math.tan(3.14159);`
+
+- *asin*
+  - Purpose: Calculate the arcsine of a number.
+  - Arguments: One number.
+  - Returns: Number (arcsine value).
+  - Example: `print Math.asin(0.5);`
+
+- *acos*
+  - Purpose: Calculate the arccosine of a number.
+  - Arguments: One number.
+  - Returns: Number (arccosine value).
+  - Example: `print Math.acos(0.5);`
+
+- *atan*
+  - Purpose: Calculate the arctangent of a number.
+  - Arguments: One number.
+  - Returns: Number (arctangent value).
+  - Example: `print Math.atan(1);`
+
+- *atan2*
+  - Purpose: Calculate the arctangent of the quotient of two numbers.
+  - Arguments: Two numbers (y, x).
+  - Returns: Number (arctangent value).
+  - Example: `print Math.atan2(1, 1);`
+
+- *floor*
+  - Purpose: Round a number down to the nearest integer.
+  - Arguments: One number.
+  - Returns: Number (rounded down).
+  - Example: `print Math.floor(3.7);`
+
+- *ceil*
+  - Purpose: Round a number up to the nearest integer.
+  - Arguments: One number.
+  - Returns: Number (rounded up).
+  - Example: `print Math.ceil(3.1);`
+
+- *round*
+  - Purpose: Round a number to the nearest integer.
+  - Arguments: One number.
+  - Returns: Number (rounded).
+  - Example: `print Math.round(3.5);`
+
+- *trunc*
+  - Purpose: Truncate a number to its integer part.
+  - Arguments: One number.
+  - Returns: Number (truncated).
+  - Example: `print Math.trunc(3.9);`
+
+- *degrees*
+  - Purpose: Convert radians to degrees.
+  - Arguments: One number.
+  - Returns: Number (degrees).
+  - Example: `print Math.degrees(3.14159);`
+
+- *radians*
+  - Purpose: Convert degrees to radians.
+  - Arguments: One number.
+  - Returns: Number (radians).
+  - Example: `print Math.radians(180);`
+
+- *min*
+  - Purpose: Find the minimum of two numbers.
+  - Arguments: Two numbers.
+  - Returns: Number (minimum value).
+  - Example: `print Math.min(3, 5);`
+
+- *max*
+  - Purpose: Find the maximum of two numbers.
+  - Arguments: Two numbers.
+  - Returns: Number (maximum value).
+  - Example: `print Math.max(3, 5);`
+
+- *clamp*
+  - Purpose: Clamp a number within a range.
+  - Arguments: Three numbers (value, min, max).
+  - Returns: Number (clamped value).
+  - Example: `print Math.clamp(5, 1, 10);`
+
+- *random*
+  - Purpose: Generate a random number in range [0, max).
+  - Arguments: One positive number (max).
+  - Returns: Number (random value).
+  - Example: `print Math.random(10);`
+
+=== Time Functions
+- *time*
+  - Purpose: Get the current Unix timestamp.
+  - Arguments: None.
+  - Returns: Number (seconds since Unix epoch).
+  - Example: `print Time.time();`
+
+- *sleep*
+  - Purpose: Pause execution for a specified number of seconds.
+  - Arguments: One non-negative number (seconds).
+  - Returns: None.
+  - Example: `Time.sleep(2);`
+
+=== IO Functions
+- *read_file*
+  - Purpose: Read the contents of a file.
+  - Arguments: One string (file path).
+  - Returns: String (file contents).
+  - Example: `print IO.read_file("example.txt");`
+
+- *write_file*
+  - Purpose: Write data to a file.
+  - Arguments: Two strings (file path, data).
+  - Returns: None.
+  - Example: `IO.write_file("example.txt", "Hello, World!");`
+
+- *append_file*
+  - Purpose: Append data to a file.
+  - Arguments: Two strings (file path, data).
+  - Returns: None.
+  - Example: `IO.append_file("example.txt", "More data.");`
+
+- *exists*
+  - Purpose: Check if a file or directory exists.
+  - Arguments: One string (file path).
+  - Returns: Boolean.
+  - Example: `print IO.exists("example.txt");`
+
+- *is_file*
+  - Purpose: Check if a path is a file.
+  - Arguments: One string (file path).
+  - Returns: Boolean.
+  - Example: `print IO.is_file("example.txt");`
+
+- *is_dir*
+  - Purpose: Check if a path is a directory.
+  - Arguments: One string (directory path).
+  - Returns: Boolean.
+  - Example: `print IO.is_dir("example_dir");`
+
+- *mkdir*
+  - Purpose: Create a new directory.
+  - Arguments: One string (directory path).
+  - Returns: None.
+  - Example: `IO.mkdir("new_dir");`
+
+- *list_dir*
+  - Purpose: List the contents of a directory.
+  - Arguments: One string (directory path).
+  - Returns: String (comma-separated list of contents).
+  - Example: `print IO.list_dir("example_dir");`
+
+- *remove_file*
+  - Purpose: Delete a file.
+  - Arguments: One string (file path).
+  - Returns: None.
+  - Example: `IO.remove_file("example.txt");`
 
 ==== Math Functions
 - *sin*
@@ -450,6 +639,129 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Arguments: None
   - Returns: Number (seconds since Unix epoch)
   - Example: `var now = clock();`
+
+=== String Functions
+- *len*
+  - Purpose: Get the length of a string.
+  - Arguments: One string.
+  - Returns: Number (length of the string).
+  - Example: `print String.len("hello");`
+
+- *split*
+  - Purpose: Split a string into parts based on a separator.
+  - Arguments: Two strings (string to split, separator).
+  - Returns: String (comma-separated parts).
+  - Example: `print String.split("a,b,c", ",");`
+
+- *join*
+  - Purpose: Join parts of a string with a separator.
+  - Arguments: Two strings (separator, comma-separated parts).
+  - Returns: String (joined string).
+  - Example: `print String.join("-", "a,b,c");`
+
+- *replace*
+  - Purpose: Replace occurrences of a substring with another substring.
+  - Arguments: Three strings (original string, substring to replace, replacement).
+  - Returns: String (modified string).
+  - Example: `print String.replace("hello world", "world", "rust");`
+
+- *lower*
+  - Purpose: Convert a string to lowercase.
+  - Arguments: One string.
+  - Returns: String (lowercase version).
+  - Example: `print String.lower("HeLLo");`
+
+- *upper*
+  - Purpose: Convert a string to uppercase.
+  - Arguments: One string.
+  - Returns: String (uppercase version).
+  - Example: `print String.upper("HeLLo");`
+
+- *strip*
+  - Purpose: Remove leading and trailing whitespace from a string.
+  - Arguments: One string.
+  - Returns: String (trimmed string).
+  - Example: `print String.strip("  hi  ");`
+
+- *startswith*
+  - Purpose: Check if a string starts with a prefix.
+  - Arguments: Two strings (string, prefix).
+  - Returns: Boolean.
+  - Example: `print String.startswith("foobar", "foo");`
+
+- *endswith*
+  - Purpose: Check if a string ends with a suffix.
+  - Arguments: Two strings (string, suffix).
+  - Returns: Boolean.
+  - Example: `print String.endswith("foobar", "bar");`
+
+- *find*
+  - Purpose: Find the index of a substring in a string.
+  - Arguments: Two strings (string, substring).
+  - Returns: Number (index) or nil if not found.
+  - Example: `print String.find("hello world", "world");`
+
+- *contains*
+  - Purpose: Check if a string contains a substring.
+  - Arguments: Two strings (string, substring).
+  - Returns: Boolean.
+  - Example: `print String.contains("hello world", "world");`
+
+=== System Functions
+- *exit*
+  - Purpose: Exit the program with a status code.
+  - Arguments: One number (status code).
+  - Returns: None (terminates the program).
+  - Example: `System.exit(0);`
+
+- *env*
+  - Purpose: Get the value of an environment variable.
+  - Arguments: One string (variable name).
+  - Returns: String (value) or nil if not found.
+  - Example: `print System.env("PATH");`
+
+- *args*
+  - Purpose: Get the command-line arguments.
+  - Arguments: None.
+  - Returns: String (comma-separated arguments).
+  - Example: `print System.args();`
+
+- *exec*
+  - Purpose: Execute a shell command.
+  - Arguments: One string (command).
+  - Returns: String (command output).
+  - Example: `print System.exec("echo hi");`
+
+- *platform*
+  - Purpose: Get the current operating system.
+  - Arguments: None.
+  - Returns: String (OS name).
+  - Example: `print System.platform();`
+
+=== Network Functions
+- *http_get*
+  - Purpose: Perform an HTTP GET request.
+  - Arguments: One string (URL).
+  - Returns: String (response body).
+  - Example: `print Network.http_get("https://example.com");`
+
+- *http_post*
+  - Purpose: Perform an HTTP POST request.
+  - Arguments: Two strings (URL, body).
+  - Returns: String (response body).
+  - Example: `print Network.http_post("https://example.com", "key=value");`
+
+- *download_file*
+  - Purpose: Download a file from a URL.
+  - Arguments: Two strings (URL, file path).
+  - Returns: None.
+  - Example: `Network.download_file("https://example.com/file.txt", "local_file.txt");`
+
+- *ping*
+  - Purpose: Ping a host to check connectivity.
+  - Arguments: One string (host).
+  - Returns: Boolean (success or failure).
+  - Example: `print Network.ping("8.8.8.8");`
 
 === Error Handling
 Bucceolang provides comprehensive error detection and reporting:
