@@ -292,7 +292,7 @@ mod test {
     fn test_time_functions() {
         let source = r#"
             var t = Time.time();
-            print t > 0;
+            print t > 1748982291; // time taken when writing this text
             Time.sleep(0.1);
             print "slept";
         "#;

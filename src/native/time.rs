@@ -86,10 +86,7 @@ pub fn create_class() -> ClassObject {
         "sleep".to_string(),
         Rc::new(RefCell::new(Box::new(SleepFn) as Box<dyn Callable>)),
     );
-    static_methods.insert(
-        "now".to_string(),
-        Rc::new(RefCell::new(Box::new(NowFn) as Box<dyn Callable>)),
-    );
+
     ClassObject {
         name: "Time".to_string(),
         superclass: None,
