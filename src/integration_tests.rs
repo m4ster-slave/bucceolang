@@ -514,7 +514,7 @@ mod test {
     #[test]
     fn test_static_method() {
         let source = r#"
-        class Math {
+        class MathTest {
           fn init() {
             this.pi = 3.14159;
           }
@@ -524,7 +524,7 @@ mod test {
           }
         }
 
-        print Math.square(10) * Math().pi;
+        print MathTest.square(10) * MathTest().pi;
         "#;
 
         let tokens = tokenize(source).expect("Tokenization failed");
