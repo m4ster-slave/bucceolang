@@ -62,7 +62,20 @@ impl Callable for AbsFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("AbsFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.abs()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -112,7 +125,22 @@ impl Callable for PowFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("PowFn native logic not implemented yet")
+        if _arguments.len() < 2 {
+            return Err(RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            ));
+        }
+        let base = &_arguments[_arguments.len() - 2];
+        let exp = &_arguments[_arguments.len() - 1];
+        if let (Object::Number(b), Object::Number(e)) = (base, exp) {
+            Ok(Object::Number(b.powf(*e)))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "arguments must be numbers".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -130,7 +158,20 @@ impl Callable for ExpFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ExpFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.exp()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -148,7 +189,28 @@ impl Callable for LogFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("LogFn native logic not implemented yet")
+        if _arguments.len() < 2 {
+            return Err(RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            ));
+        }
+        let value = &_arguments[_arguments.len() - 2];
+        let base = &_arguments[_arguments.len() - 1];
+        if let (Object::Number(v), Object::Number(b)) = (value, base) {
+            if *v <= 0.0 || *b <= 0.0 {
+                return Err(RuntimeError::other(
+                    0,
+                    "logarithm arguments must be positive".to_string(),
+                ));
+            }
+            Ok(Object::Number(v.log(*b)))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "arguments must be numbers".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -166,7 +228,26 @@ impl Callable for Log10Fn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("Log10Fn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            if *num <= 0.0 {
+                return Err(RuntimeError::other(
+                    0,
+                    "log10 argument must be positive".to_string(),
+                ));
+            }
+            Ok(Object::Number(num.log10()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -217,7 +298,20 @@ impl Callable for CosFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("CosFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.cos()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -235,7 +329,20 @@ impl Callable for TanFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("TanFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.tan()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -253,7 +360,20 @@ impl Callable for AsinFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("AsinFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.asin()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -271,7 +391,20 @@ impl Callable for AcosFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("AcosFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.acos()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -289,7 +422,20 @@ impl Callable for AtanFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("AtanFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.atan()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -307,7 +453,22 @@ impl Callable for Atan2Fn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("Atan2Fn native logic not implemented yet")
+        if _arguments.len() < 2 {
+            return Err(RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            ));
+        }
+        let y = &_arguments[_arguments.len() - 2];
+        let x = &_arguments[_arguments.len() - 1];
+        if let (Object::Number(y), Object::Number(x)) = (y, x) {
+            Ok(Object::Number(y.atan2(*x)))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "arguments must be numbers".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         2
@@ -325,7 +486,20 @@ impl Callable for FloorFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("FloorFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.floor()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -343,7 +517,20 @@ impl Callable for CeilFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("CeilFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.ceil()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -361,7 +548,20 @@ impl Callable for RoundFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("RoundFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.round()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -379,7 +579,20 @@ impl Callable for TruncFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("TruncFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.trunc()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -397,7 +610,20 @@ impl Callable for DegreesFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("DegreesFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.to_degrees()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -415,7 +641,20 @@ impl Callable for RadiansFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("RadiansFn native logic not implemented yet")
+        let arg = _arguments.last().ok_or_else(|| {
+            RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            )
+        })?;
+        if let Object::Number(num) = arg {
+            Ok(Object::Number(num.to_radians()))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "argument must be a number".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         1
@@ -433,10 +672,25 @@ impl Callable for MinFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("MinFn native logic not implemented yet")
+        let mut min: Option<f64> = None;
+        for arg in &_arguments {
+            if let Object::Number(num) = arg {
+                min = Some(match min {
+                    Some(m) => m.min(*num),
+                    None => *num,
+                });
+            } else {
+                return Err(RuntimeError::other(
+                    0,
+                    "all arguments must be numbers".to_string(),
+                ));
+            }
+        }
+        min.map(Object::Number)
+            .ok_or_else(|| RuntimeError::other(0, "no arguments provided".to_string()))
     }
     fn arity(&self) -> usize {
-        1
+        2
     }
 }
 impl Display for MinFn {
@@ -451,10 +705,25 @@ impl Callable for MaxFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("MaxFn native logic not implemented yet")
+        let mut max: Option<f64> = None;
+        for arg in &_arguments {
+            if let Object::Number(num) = arg {
+                max = Some(match max {
+                    Some(m) => m.max(*num),
+                    None => *num,
+                });
+            } else {
+                return Err(RuntimeError::other(
+                    0,
+                    "all arguments must be numbers".to_string(),
+                ));
+            }
+        }
+        max.map(Object::Number)
+            .ok_or_else(|| RuntimeError::other(0, "no arguments provided".to_string()))
     }
     fn arity(&self) -> usize {
-        1
+        2
     }
 }
 impl Display for MaxFn {
@@ -469,7 +738,23 @@ impl Callable for ClampFn {
         _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        unimplemented!("ClampFn native logic not implemented yet")
+        if _arguments.len() < 3 {
+            return Err(RuntimeError::other(
+                0,
+                "not enough arguments in function".to_string() + &self.to_string(),
+            ));
+        }
+        let value = &_arguments[_arguments.len() - 3];
+        let min = &_arguments[_arguments.len() - 2];
+        let max = &_arguments[_arguments.len() - 1];
+        if let (Object::Number(v), Object::Number(minv), Object::Number(maxv)) = (value, min, max) {
+            Ok(Object::Number(v.max(*minv).min(*maxv)))
+        } else {
+            Err(RuntimeError::other(
+                0,
+                "arguments must be numbers".to_string(),
+            ))
+        }
     }
     fn arity(&self) -> usize {
         3
