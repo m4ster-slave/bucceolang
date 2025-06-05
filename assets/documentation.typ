@@ -107,6 +107,7 @@ The execution model follows these core principles:
 
 Code is processed through several sophisticated phases:
 
+#pagebreak()
 ==== 1. Scanning (Tokenization)
 The scanner (lexer) breaks the source code into tokens through the following steps:
 - Reading source code character by character
@@ -144,11 +145,14 @@ The resolver performs semantic analysis before execution:
 - Resolves variable references to their declarations
 - Validates scope rules and variable usage
 - Detects use of variables in their own initializers
-- Ensures 'return' only appears in functions
-- Verifies 'this' is only used in methods
+- Ensures `return` only appears in functions
+- Ensures `break` and `continue` only appears in loops
+- Verifies `this` and `super` is only used in methods
 - Builds scope chains for closures
 - Reports static semantic errors
 
+
+#pagebreak()
 ==== 4. Interpretation (Execution)
 The interpreter traverses the AST and executes the program:
 
@@ -197,6 +201,7 @@ Each phase maintains detailed error information including:
 - Recovery strategies where applicable
 - Suggestions for fixes when possible
 
+#pagebreak()
 === Operators and Precedence
 Bucceolang supports a variety of operators with well-defined precedence rules:
 
@@ -230,6 +235,8 @@ From highest to lowest:
 7. Logical OR (`||`)
 8. Assignment (`=`)
 
+
+#pagebreak()
 == Installation & Usage
 Bucceolang can be used either through its command-line interface or via the web browser interface.
 
@@ -273,11 +280,9 @@ For the best development experience:
 
 - Use neovim
 
+#pagebreak()
 == Language Features
-=== Keywords
-
-Bucceolang includes special keywords that provide specific functionality within the language.
-
+=== #text(size: 17pt)[Keywords]
 ==== this
 The `this` keyword is used within class methods to refer to the current instance of the class. It allows access to the instance's variables and methods. 
 
@@ -373,10 +378,12 @@ class Person {
 ==== Features
 - *Constructor*: The `init` method serves as the constructor
 - *Instance Methods*: Methods can access instance variables through `this`
+- *Superclass*: Superclass Methods can be accessed with the `super` keyword
 - *Instance Variables*: Dynamic creation of instance variables
 - *Method Calls*: Methods are called using dot notation
 - *Static Methods*: Methods declared with the `static` keyword belong to the class itself, not instances
 
+#pagebreak()
 ==== Static Methods
 Methods in a class can be declared as static using the `static` keyword before the method declaration. Static methods belong to the class itself rather than instances of the class. They can be called on the class directly without creating an instance.
 
@@ -397,23 +404,12 @@ var person = Person("Alice");
 person.greet(); // Prints: Hello, I'm Alice
 ```
 
-=== Native Functions
-Bucceolang includes several built-in functions:
-
-- *print*: Outputs values to the console
-- *clock*: Returns the current time
-- *random*: Generates random numbers
-- *sin*: Calculates sine of a number
-- *sqrt*: Calculates square root
-- *read*: Reads input from the user
-
-These functions provide essential functionality for common programming tasks.
-
 === Standard Library
 Bucceolang provides a set of built-in functions that form its standard library:
 
 ==== Input/Output
 - *print*
+  - *Be carefull print is a statment not a function, look at the example*
   - Purpose: Display values to the console
   - Arguments: One value of any type
   - Returns: nil
@@ -424,6 +420,61 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Arguments: Prompt as a String
   - Returns: String (the input line with whitespace trimmed)
   - Example: `var name = input("Input: ");`
+
+- *read_file*
+  - Purpose: Read the contents of a file.
+  - Arguments: One string (file path).
+  - Returns: String (file contents).
+  - Example: `print IO.read_file("example.txt");`
+
+- *write_file*
+  - Purpose: Write data to a file.
+  - Arguments: Two strings (file path, data).
+  - Returns: None.
+  - Example: `IO.write_file("example.txt", "Hello, World!");`
+
+- *append_file*
+  - Purpose: Append data to a file.
+  - Arguments: Two strings (file path, data).
+  - Returns: None.
+  - Example: `IO.append_file("example.txt", "More data.");`
+
+- *exists*
+  - Purpose: Check if a file or directory exists.
+  - Arguments: One string (file path).
+  - Returns: Boolean.
+  - Example: `print IO.exists("example.txt");`
+
+- *is_file*
+  - Purpose: Check if a path is a file.
+  - Arguments: One string (file path).
+  - Returns: Boolean.
+  - Example: `print IO.is_file("example.txt");`
+
+- *is_dir*
+  - Purpose: Check if a path is a directory.
+  - Arguments: One string (directory path).
+  - Returns: Boolean.
+  - Example: `print IO.is_dir("example_dir");`
+
+- *mkdir*
+  - Purpose: Create a new directory.
+  - Arguments: One string (directory path).
+  - Returns: None.
+  - Example: `IO.mkdir("new_dir");`
+
+- *list_dir*
+  - Purpose: List the contents of a directory.
+  - Arguments: One string (directory path).
+  - Returns: String (comma-separated list of contents).
+  - Example: `print IO.list_dir("example_dir");`
+
+- *remove_file*
+  - Purpose: Delete a file.
+  - Arguments: One string (file path).
+  - Returns: None.
+  - Example: `IO.remove_file("example.txt");`
+
 
 === Math Functions
 - *abs*
@@ -443,6 +494,24 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Arguments: Two numbers (base, exponent).
   - Returns: Number (result).
   - Example: `print Math.pow(2, 3);`
+
+- *exp*
+  - Purpose: Calculate e raised to the power of a number.
+  - Arguments: One number.
+  - Returns: Number (e^x).
+  - Example: `print Math.exp(1);`
+
+- *log*
+  - Purpose: Calculate the natural logarithm (base e) of a number.
+  - Arguments: One positive number.
+  - Returns: Number (natural logarithm).
+  - Example: `print Math.log(2.71828);`
+
+- *log10*
+  - Purpose: Calculate the base-10 logarithm of a number.
+  - Arguments: One positive number.
+  - Returns: Number (base-10 logarithm).
+  - Example: `print Math.log10(1000);`
 
 - *sin*
   - Purpose: Calculate the sine of a number (in radians).
@@ -558,87 +627,6 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Arguments: One non-negative number (seconds).
   - Returns: None.
   - Example: `Time.sleep(2);`
-
-=== IO Functions
-- *read_file*
-  - Purpose: Read the contents of a file.
-  - Arguments: One string (file path).
-  - Returns: String (file contents).
-  - Example: `print IO.read_file("example.txt");`
-
-- *write_file*
-  - Purpose: Write data to a file.
-  - Arguments: Two strings (file path, data).
-  - Returns: None.
-  - Example: `IO.write_file("example.txt", "Hello, World!");`
-
-- *append_file*
-  - Purpose: Append data to a file.
-  - Arguments: Two strings (file path, data).
-  - Returns: None.
-  - Example: `IO.append_file("example.txt", "More data.");`
-
-- *exists*
-  - Purpose: Check if a file or directory exists.
-  - Arguments: One string (file path).
-  - Returns: Boolean.
-  - Example: `print IO.exists("example.txt");`
-
-- *is_file*
-  - Purpose: Check if a path is a file.
-  - Arguments: One string (file path).
-  - Returns: Boolean.
-  - Example: `print IO.is_file("example.txt");`
-
-- *is_dir*
-  - Purpose: Check if a path is a directory.
-  - Arguments: One string (directory path).
-  - Returns: Boolean.
-  - Example: `print IO.is_dir("example_dir");`
-
-- *mkdir*
-  - Purpose: Create a new directory.
-  - Arguments: One string (directory path).
-  - Returns: None.
-  - Example: `IO.mkdir("new_dir");`
-
-- *list_dir*
-  - Purpose: List the contents of a directory.
-  - Arguments: One string (directory path).
-  - Returns: String (comma-separated list of contents).
-  - Example: `print IO.list_dir("example_dir");`
-
-- *remove_file*
-  - Purpose: Delete a file.
-  - Arguments: One string (file path).
-  - Returns: None.
-  - Example: `IO.remove_file("example.txt");`
-
-==== Math Functions
-- *sin*
-  - Purpose: Calculate sine of a number (in radians)
-  - Arguments: One number
-  - Returns: Number
-  - Example: `var result = sin(3.14159);`
-
-- *sqrt*
-  - Purpose: Calculate square root of a number
-  - Arguments: One non-negative number
-  - Returns: Number
-  - Example: `var root = sqrt(16);`
-
-- *random*
-  - Purpose: Generate a random integer in range [0, max)
-  - Arguments: One positive number (max)
-  - Returns: Number
-  - Example: `var dice = random(6);`
-
-==== System Functions
-- *clock*
-  - Purpose: Get current Unix timestamp
-  - Arguments: None
-  - Returns: Number (seconds since Unix epoch)
-  - Example: `var now = clock();`
 
 === String Functions
 - *len*
@@ -831,7 +819,7 @@ When writing Bucceolang code, follow these guidelines:
            this.balance = balance;
        }
 
-       fn deposit(amount) {
+fn deposit(amount) {
            this.balance = this.balance + amount;
        }
    }
@@ -887,7 +875,7 @@ class Rectangle < Shape {
     }
 }
 ```
-
+#pagebreak()
 ==== Complex Data Structure
 ```
 class Node {
@@ -931,6 +919,7 @@ list.add(3);
 list.print_list();
 ```
 
+#pagebreak()
 == Architecture of the Interpreter 
 === Module structure
 ==== Scanner (Tokenization)
@@ -977,6 +966,7 @@ Memory management in Bucceolang is automatic:
 - Proper handling of circular references
 - Deterministic cleanup of resources
 
+#pagebreak()
 == Appendix 
 === Grammar specification
 The following EBNF-style grammar defines the syntax of Bucceolang:
