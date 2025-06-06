@@ -37,11 +37,19 @@ impl Callable for ReadFileFn {
     ) -> Result<Object, RuntimeError> {
         use std::fs;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "read_file(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "read_file(path): path must be a string",
+                ))
+            }
         };
         match fs::read_to_string(path) {
             Ok(contents) => Ok(Object::String(contents)),
@@ -66,15 +74,28 @@ impl Callable for WriteFileFn {
     ) -> Result<Object, RuntimeError> {
         use std::fs;
         if _arguments.len() != 2 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 2 arguments but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "write_file(path, contents): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "write_file(path, contents): path must be a string",
+                ))
+            }
         };
         let contents = match &_arguments[1] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "write_file(path, contents): contents must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "write_file(path, contents): contents must be a string",
+                ))
+            }
         };
         match fs::write(path, contents) {
             Ok(_) => Ok(Object::Nil),
@@ -100,15 +121,28 @@ impl Callable for AppendFileFn {
         use std::fs::OpenOptions;
         use std::io::Write;
         if _arguments.len() != 2 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 2 arguments but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 2 arguments but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "append_file(path, contents): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "append_file(path, contents): path must be a string",
+                ))
+            }
         };
         let contents = match &_arguments[1] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "append_file(path, contents): contents must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "append_file(path, contents): contents must be a string",
+                ))
+            }
         };
         match OpenOptions::new().append(true).create(true).open(path) {
             Ok(mut file) => match file.write_all(contents.as_bytes()) {
@@ -136,11 +170,19 @@ impl Callable for ExistsFn {
     ) -> Result<Object, RuntimeError> {
         use std::path::Path;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "exists(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "exists(path): path must be a string",
+                ))
+            }
         };
         Ok(Object::Boolean(Path::new(path).exists()))
     }
@@ -162,11 +204,19 @@ impl Callable for IsFileFn {
     ) -> Result<Object, RuntimeError> {
         use std::path::Path;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "is_file(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "is_file(path): path must be a string",
+                ))
+            }
         };
         Ok(Object::Boolean(Path::new(path).is_file()))
     }
@@ -188,11 +238,19 @@ impl Callable for IsDirFn {
     ) -> Result<Object, RuntimeError> {
         use std::path::Path;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "is_dir(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "is_dir(path): path must be a string",
+                ))
+            }
         };
         Ok(Object::Boolean(Path::new(path).is_dir()))
     }
@@ -214,23 +272,26 @@ impl Callable for ListDirFn {
     ) -> Result<Object, RuntimeError> {
         use std::fs;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "list_dir(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "list_dir(path): path must be a string",
+                ))
+            }
         };
         match fs::read_dir(path) {
             Ok(entries) => {
                 let mut names = Vec::new();
-                for entry in entries {
-                    match entry {
-                        Ok(e) => {
-                            if let Some(name) = e.file_name().to_str() {
-                                names.push(name.to_string());
-                            }
-                        }
-                        Err(_) => {}
+                for entry in entries.flatten() {
+                    if let Some(name) = entry.file_name().to_str() {
+                        names.push(name.to_string());
                     }
                 }
                 Ok(Object::String(names.join(",")))
@@ -256,11 +317,19 @@ impl Callable for RemoveFileFn {
     ) -> Result<Object, RuntimeError> {
         use std::fs;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "remove_file(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "remove_file(path): path must be a string",
+                ))
+            }
         };
         match fs::remove_file(path) {
             Ok(_) => Ok(Object::Nil),
@@ -285,11 +354,19 @@ impl Callable for MkdirFn {
     ) -> Result<Object, RuntimeError> {
         use std::fs;
         if _arguments.len() != 1 {
-            return Err(RuntimeError::argument_error(0, format!("Expected 1 argument but got {}", _arguments.len())));
+            return Err(RuntimeError::argument_error(
+                0,
+                format!("Expected 1 argument but got {}", _arguments.len()),
+            ));
         }
         let path = match &_arguments[0] {
             Object::String(s) => s,
-            _ => return Err(RuntimeError::argument_error(0, "mkdir(path): path must be a string")),
+            _ => {
+                return Err(RuntimeError::argument_error(
+                    0,
+                    "mkdir(path): path must be a string",
+                ))
+            }
         };
         match fs::create_dir_all(path) {
             Ok(_) => Ok(Object::Nil),

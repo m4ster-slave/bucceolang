@@ -331,7 +331,7 @@ impl ExprVisitor<Object> for Interpreter {
     ) -> Result<Object, RuntimeError> {
         let object = expr.object.accept(self)?;
 
-        if let Object::ClassInstance(mut instance) = object.clone() {
+        if let Object::ClassInstance(mut instance) = object {
             let value = expr.value.accept(self)?;
             instance.set(expr.name.clone(), value.clone());
             Ok(value)
@@ -353,7 +353,7 @@ impl ExprVisitor<Object> for Interpreter {
         let superclass = self
             .environment
             .borrow_mut()
-            .get_at(&distance, "super".to_string())?;
+            .get_at(distance, "super".to_string())?;
 
         let obj = self
             .environment
@@ -600,6 +600,7 @@ impl Interpreter {
     }
 
     /// Creates a new interpreter with the given output destination.
+    #[allow(dead_code)] // i need this here because the wasm lib needs this but the package warn me
     pub fn new_with_output_without_natives(output: Rc<RefCell<dyn Write>>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
 

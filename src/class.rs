@@ -42,7 +42,10 @@ impl ClassObject {
 
         for (name, method) in methods {
             if method.declaration.is_static {
-                static_methods.insert(name, Rc::new(RefCell::new(Box::new(method) as Box<dyn Callable>)));
+                static_methods.insert(
+                    name,
+                    Rc::new(RefCell::new(Box::new(method) as Box<dyn Callable>)),
+                );
             } else {
                 instance_methods.insert(name, method);
             }
@@ -136,8 +139,11 @@ impl ClassInstance {
         } else {
             // first try to find the method in the class before erroring
             match self.class.find_method(name.lexeme()) {
-                Some(method) => match method.clone().bind(self.clone()) {
-                    Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(Box::new(bound_method) as Box<dyn Callable>)))),
+                Some(method) => match method.bind(self.clone()) {
+                    Ok(bound_method) => Ok(Object::Callable(Rc::new(RefCell::new(Box::new(
+                        bound_method,
+                    )
+                        as Box<dyn Callable>)))),
                     Err(e) => Err(e),
                 },
                 None => Err(RuntimeError::undefined_variable(

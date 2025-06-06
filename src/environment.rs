@@ -63,7 +63,7 @@ impl Environment {
             }
             std::collections::hash_map::Entry::Occupied(_) => Err(RuntimeError::other(
                 0,
-                format!("name \"{}\" already defined", name.clone()),
+                format!("name \"{}\" already defined", name),
             )),
         }
     }
