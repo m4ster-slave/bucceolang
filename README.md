@@ -6,7 +6,8 @@
 
 **Bucceloang** is an interpreter written in Rust that combines simplicity with powerful programming constructs, inspired by the book [_Crafting Interpreters_](https://craftinginterpreters.com/). It features a sophisticated execution pipeline with lexing, parsing, static analysis, and interpretation phases.
 
-> [!IMPORTANT] > _In Beta!_
+> [!IMPORTANT] 
+> _In Beta!_
 
 ## 🧠 Language Features
 
