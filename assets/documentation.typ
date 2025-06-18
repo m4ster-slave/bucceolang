@@ -1000,13 +1000,3 @@ primary        → "true" | "false" | "nil" | "this"
                | "super" "." IDENTIFIER ;
 ```
 
-=== Future Developments
-As outlined in the project roadmap:
-
-- Implementation of static methods
-- Support for inheritance
-- Addition of arrays and dictionaries
-- Enhanced standard library
-- Improved error diagnostics
-- Potential bytecode VM implementation
-
