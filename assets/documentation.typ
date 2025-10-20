@@ -419,7 +419,7 @@ Bucceolang provides a set of built-in functions that form its standard library:
   - Purpose: Read a line of text from standard input
   - Arguments: Prompt as a String
   - Returns: String (the input line with whitespace trimmed)
-  - Example: `var name = input("Input: ");`
+  - Example: `var name = IO.input("Input: ");`
 
 - *read_file*
   - Purpose: Read the contents of a file.
